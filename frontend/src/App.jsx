@@ -9,6 +9,7 @@ import ProductList from './components/User/ProductList';
 import BidForm from './components/User/BidForm';
 import VerifyEmailOTP from './components/User/VerifyEmailOTP';
 import Navbar from './components/Shared/Navbar';
+import ProtectedRoute from './routes/ProtectedRoute';
 
 function App() {
   return (
@@ -17,7 +18,14 @@ function App() {
       <Routes>
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<Dashboard />}>
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        >
           <Route path="register-product" element={<RegisterProduct />} />
           <Route path="view-bids" element={<ViewBids />} />
         </Route>
@@ -28,7 +36,7 @@ function App() {
         <Route path="/user/verify/:bidId" element={<VerifyEmailOTP />} />
 
         {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/user" />} />
+        <Route path="*" element={<Navigate to="/user" replace />} />
       </Routes>
     </>
   );

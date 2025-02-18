@@ -1,18 +1,19 @@
 // src/components/Admin/Dashboard.jsx
 import React from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import Navbar from '../Shared/Navbar';
+// import Navbar from '../Shared/Navbar';
 
 const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* <Navbar /> */}
       <div className="flex flex-col md:flex-row">
         <aside className="md:w-64 bg-white shadow-md p-6">
           <nav>
             <ul>
               <li className="mb-4">
                 <Link
-                  to="register-product"
+                  to="/admin/register-product"
                   className="text-blue-600 font-semibold hover:underline"
                 >
                   Register Product
@@ -20,7 +21,7 @@ const Dashboard = () => {
               </li>
               <li className="mb-4">
                 <Link
-                  to="view-bids"
+                  to="/admin/view-bids"
                   className="text-blue-600 font-semibold hover:underline"
                 >
                   View Bids

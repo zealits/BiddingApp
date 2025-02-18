@@ -1,4 +1,4 @@
-// backend/routes/adminRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
@@ -10,13 +10,20 @@ const upload = multer({ storage });
 
 // Admin login and other routes...
 router.post('/login', adminController.loginAdmin);
-
 router.post('/register', adminController.registerAdmin);
 
-// Register a product with image upload (protected route)
-router.post('/product', auth, upload.single('image'), adminController.registerProduct);
+// Register a product with multiple image uploads (protected route)
+router.post('/product', auth, upload.array('images', 10), adminController.registerProduct);
 
-// View bids route...
-router.get('/product/:productId/bids', auth, adminController.getProductBids);
+// View all bids route with pagination
+// router.get('/bids', auth, adminController.getAllBids);
+
+
+// View all products route with pagination
+router.get('/products', auth, adminController.getProducts);
+
+// Fetch bids for a specific product
+router.get('/products/:id/bids', auth, adminController.getProductBids);
+
 
 module.exports = router;

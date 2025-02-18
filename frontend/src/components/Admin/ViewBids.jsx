@@ -1,89 +1,126 @@
-// src/components/Admin/ViewBids.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const ViewBids = () => {
-  const [productId, setProductId] = useState('');
-  const [bids, setBids] = useState([]);
+const ViewProducts = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [bids, setBids] = useState([]);
+  const [bidsLoading, setBidsLoading] = useState(false);
+  const [bidsError, setBidsError] = useState('');
 
-  const fetchBids = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('adminToken');
+        const res = await axios.get(`/api/admin/products?page=${page}&limit=10`, {
+          headers: { 'x-auth-token': token }
+        });
+        setProducts(res.data.products);
+        setTotalPages(res.data.totalPages);
+        setError('');
+      } catch (err) {
+        console.error('Error fetching products', err);
+        setError('Error fetching products. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [page]);
+
+  const fetchBids = async (productId) => {
     try {
+      setBidsLoading(true);
       const token = localStorage.getItem('adminToken');
-      const res = await axios.get(
-        `/api/admin/product/${productId}/bids`,
-        { headers: { 'x-auth-token': token } }
-      );
+      const res = await axios.get(`/api/admin/products/${productId}/bids`, {
+        headers: { 'x-auth-token': token }
+      });
       setBids(res.data);
-      setError('');
+      setBidsError('');
+      setSelectedProduct(productId);
     } catch (err) {
       console.error('Error fetching bids', err);
-      setError('Error fetching bids. Please check the Product ID and try again.');
+      setBidsError('Error fetching bids. Please try again.');
+    } finally {
+      setBidsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md my-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">View Bids</h2>
-      <form onSubmit={fetchBids} className="mb-6">
-        <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">
-            Product ID
-          </label>
-          <input
-            type="text"
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
-            placeholder="Enter Product ID"
-            className="w-full border border-gray-300 p-3 rounded-md focus:outline-none focus:ring focus:border-blue-500"
-            required
-          />
+    <div className="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md my-8">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">View Products</h2>
+      {loading && <p className="text-center text-gray-500">Loading products...</p>}
+      {error && <p className="text-red-600 text-center">{error}</p>}
+      {!loading && products.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map((product) => (
+            <div key={product._id} className="bg-gray-100 p-4 rounded-lg shadow-md">
+              <img src={product.images[0]?.data} alt={product.name} loading="lazy" className="h-40 w-full object-cover rounded" />
+              <h3 className="text-lg font-bold mt-2">{product.name}</h3>
+              <p className="text-gray-600 text-sm">{product.description}</p>
+              <button
+                onClick={() => fetchBids(product._id)}
+                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md w-full hover:bg-blue-600 transition"
+              >
+                View Bids
+              </button>
+            </div>
+          ))}
         </div>
+      )}
+      <div className="flex justify-between mt-4">
         <button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-3 rounded-md hover:bg-blue-600 transition-colors duration-200"
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+          className="bg-gray-300 px-4 py-2 rounded-md disabled:opacity-50"
         >
-          Fetch Bids
+          Previous
         </button>
-        {error && <p className="mt-4 text-red-600 text-center">{error}</p>}
-      </form>
-      {bids.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                  Email
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                  Phone
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                  Price
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                  Verified
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {bids.map((bid) => (
-                <tr key={bid._id} className="border-t border-gray-200">
-                  <td className="py-3 px-4 text-sm text-gray-600">{bid.email}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{bid.phone}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{bid.price}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
-                    {bid.isVerified ? 'Yes' : 'No'}
-                  </td>
+        <span>Page {page} of {totalPages}</span>
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+          className="bg-gray-300 px-4 py-2 rounded-md disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+      {selectedProduct && (
+        <div className="mt-6">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">Bids for Selected Product</h3>
+          {bidsLoading && <p className="text-center text-gray-500">Loading bids...</p>}
+          {bidsError && <p className="text-red-600 text-center">{bidsError}</p>}
+          {!bidsLoading && bids.length > 0 && (
+            <table className="min-w-full border border-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Phone</th>
+                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4">Verified</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {bids.map((bid) => (
+                  <tr key={bid._id} className="border-t border-gray-200">
+                    <td className="py-3 px-4">{bid.email}</td>
+                    <td className="py-3 px-4">{bid.phone}</td>
+                    <td className="py-3 px-4">{bid.price}</td>
+                    <td className="py-3 px-4">{bid.isVerified ? 'Yes' : 'No'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-export default ViewBids;
+export default ViewProducts;

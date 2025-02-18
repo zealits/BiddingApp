@@ -10,7 +10,7 @@ const Navbar = () => {
         <div>
           <Link to="/admin/login" className="mr-4 hover:underline">Admin Login</Link>
           {/* Future link for User module */}
-          <Link to="/user" className="hover:underline">User</Link>
+
         </div>
       </div>
     </nav>

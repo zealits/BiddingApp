@@ -54,24 +54,47 @@ exports.registerProduct = async (req, res) => {
       name,
       description,
     });
-    // If an image file was uploaded, store it in the database
-    if (req.file) {
-      newProduct.image = req.file.buffer.toString("base64");
-      newProduct.imageContentType = req.file.mimetype;
+    // If images were uploaded, process each file and store in the images array
+    if (req.files && req.files.length > 0) {
+      newProduct.images = req.files.map(file => ({
+        data: file.buffer.toString('base64'),
+        contentType: file.mimetype,
+      }));
     }
     await newProduct.save();
-    res.json(newProduct);
+    // res.json(newProduct);
+    res.json({ msg: "Product registered successfully" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// View all bids for a given product (admin-protected)
+// Backend: Fetch paginated products
+exports.getProducts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    const products = await Product.find({}, 'name description images')
+      .skip(skip)
+      .limit(limit);
+    
+    const totalProducts = await Product.countDocuments();
+    res.json({ products, totalPages: Math.ceil(totalProducts / limit) });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
   }
 };
 
-// View all bids for a given product (admin-protected)
+// Backend: Fetch bids for a specific product
 exports.getProductBids = async (req, res) => {
-  const productId = req.params.productId;
   try {
-    const bids = await Bid.find({ product: productId });
+    const productId = req.params.id;
+    const bids = await Bid.find({ product: productId }, 'email phone price isVerified');
     res.json(bids);
   } catch (err) {
     console.error(err.message);
