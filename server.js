@@ -1,6 +1,6 @@
 // backend/server.js
 const path = require('path');
-
+// const cors = require('cors');
 const express = require('express');
 const connectDB = require('./config/db');
 // require('dotenv').config();
@@ -12,7 +12,8 @@ const app = express();
 connectDB();
 app.use(cors());
 // Middleware to parse JSON
-app.use(express.json({ extended: false }));
+// app.use(express.json({ extended: false }));
+app.use(express.json());
 
 // Mount routes
 app.use('/api/admin', require('./routes/adminRoutes'));

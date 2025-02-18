@@ -60,7 +60,16 @@ const ViewProducts = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => (
             <div key={product._id} className="bg-gray-100 p-4 rounded-lg shadow-md">
-              <img src={product.images[0]?.data} alt={product.name} loading="lazy" className="h-40 w-full object-cover rounded" />
+              <img
+  src={
+    product.images[0]
+      ? `data:${product.images[0].contentType};base64,${product.images[0].data}`
+      : ''
+  }
+  alt={product.name}
+  className="h-40 w-full object-cover rounded"
+/>
+
               <h3 className="text-lg font-bold mt-2">{product.name}</h3>
               <p className="text-gray-600 text-sm">{product.description}</p>
               <button
