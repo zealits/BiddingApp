@@ -35,8 +35,7 @@ const ImageCarousel = ({ images, alt }) => {
           src={`data:${currentImage.contentType};base64,${currentImage.data}`}
           alt={`${alt} - ${currentIndex + 1}`}
           
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
-            loaded ? 'opacity-100' : 'opacity-0'
+          className={`w-full h-full object-cover transition-opacity duration-300
           }`}
           onLoad={() => setLoaded(true)}
         />

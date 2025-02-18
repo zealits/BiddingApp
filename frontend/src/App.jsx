@@ -17,6 +17,7 @@ function App() {
   return (
     <>
       {/* <Navbar /> */}
+      <Navbar/>
       <Routes>
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

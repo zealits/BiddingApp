@@ -7,7 +7,7 @@ import Footer from './Footer'
 function HomePage() {
   return (
     <div>
-    <Navbar/>
+    {/* <Navbar/> */}
     <HeroSection/>
     <ProductList/>
     <Footer/>

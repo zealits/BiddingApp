@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import Navbar from './Navbar';
+// import Navbar from './Navbar';
 
 const CheckBidStatus = () => {
   const [email, setEmail] = useState('');
@@ -27,7 +27,7 @@ const CheckBidStatus = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 mb-8">
-        <Navbar/>
+        {/* <Navbar/> */}
       <div className="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           Check Your Bid Status
