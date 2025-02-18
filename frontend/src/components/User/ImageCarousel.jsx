@@ -1,51 +1,59 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 const ImageCarousel = ({ images, alt }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loaded, setLoaded] = useState(false);
 
-  // When the currentIndex changes, reset the loaded state.
+  // Reset loaded state whenever the current index changes.
   useEffect(() => {
     setLoaded(false);
   }, [currentIndex]);
 
-  // Guard for empty images array
+  // Guard clause for empty images array.
   if (!images || images.length === 0) return null;
+
+  const currentImage = images[currentIndex];
+
+  const handlePrev = () => {
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+    );
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prevIndex) =>
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+    );
+  };
 
   return (
     <div className="relative mb-4">
       <div className="w-full h-40 overflow-hidden rounded">
-        {console.log("Current image object:", images[currentIndex])}
         <img
-          key={`carousel-image-${currentIndex}`}  // Force remount on index change
-          src={`data:${images[currentIndex].contentType};base64,${images[currentIndex].data}`}
+          key={`carousel-image-${currentIndex}`} // Force remount on index change
+          src={`data:${currentImage.contentType};base64,${currentImage.data}`}
           alt={`${alt} - ${currentIndex + 1}`}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
-          onLoad={() => {
-            console.log("Image loaded");
-            setLoaded(true);
-          }}
+          
+          className={`w-full h-full object-cover transition-opacity duration-300 ${
+            loaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setLoaded(true)}
         />
       </div>
       {images.length > 1 && (
         <>
           <button
-            onClick={() =>
-              setCurrentIndex((prevIndex) =>
-                prevIndex === 0 ? images.length - 1 : prevIndex - 1
-              )
-            }
-            className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-gray-700 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-75 hover:opacity-100"
+            onClick={handlePrev}
+            aria-label="Previous image"
+            className="absolute top-1/2 left-0 transform -translate-y-1/2 bg-gray-700 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-75 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             &#8249;
           </button>
           <button
-            onClick={() =>
-              setCurrentIndex((prevIndex) =>
-                prevIndex === images.length - 1 ? 0 : prevIndex + 1
-              )
-            }
-            className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-gray-700 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-75 hover:opacity-100"
+            onClick={handleNext}
+            aria-label="Next image"
+            className="absolute top-1/2 right-0 transform -translate-y-1/2 bg-gray-700 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-75 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             &#8250;
           </button>
@@ -53,6 +61,16 @@ const ImageCarousel = ({ images, alt }) => {
       )}
     </div>
   );
+};
+
+ImageCarousel.propTypes = {
+  images: PropTypes.arrayOf(
+    PropTypes.shape({
+      contentType: PropTypes.string.isRequired,
+      data: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  alt: PropTypes.string.isRequired,
 };
 
 export default ImageCarousel;
