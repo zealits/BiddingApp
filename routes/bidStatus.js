@@ -1,4 +1,3 @@
-// routes/bidStatus.js
 const express = require('express');
 const router = express.Router();
 const Bid = require('../models/Bid'); // Import Bid model
@@ -23,8 +22,11 @@ router.post('/bid-status', async (req, res) => {
     // Format the bid details
     const bidDetails = bids.map((bid) => ({
       productName: bid.product.name,
-      bidAmount: bid.amount,
-      status: bid.status, // Assuming status is a field in your Bid schema
+      bidAmount: bid.price,
+      phone: bid.phone,
+      isVerified: bid.isVerified,
+      status: bid.status, // Pending, Accepted, or Rejected
+      createdAt: bid.createdAt,
     }));
 
     res.json({ bids: bidDetails });
