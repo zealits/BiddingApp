@@ -8,6 +8,7 @@ const BidSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   isVerified: { type: Boolean, default: false },
   otp: { type: String }, // For bid verification (if needed)
+  status: { type: String, enum: ['Pending', 'Accepted', 'Rejected'], default: 'Pending' },
   createdAt: { type: Date, default: Date.now },
 });
 

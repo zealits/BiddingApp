@@ -10,11 +10,14 @@ import BidForm from './components/User/BidForm';
 import VerifyEmailOTP from './components/User/VerifyEmailOTP';
 import Navbar from './components/Shared/Navbar';
 import ProtectedRoute from './routes/ProtectedRoute';
+import HomePage from './components/User/HomePage';
+import CheckBidStatus from './components/User/CheckBid';
 
 function App() {
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
+      <Navbar/>
       <Routes>
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -31,9 +34,11 @@ function App() {
         </Route>
 
         {/* User Routes */}
-        <Route path="/user" element={<ProductList />} />
+        <Route path="/user" element={<HomePage />} />
         <Route path="/user/bid/:productId" element={<BidForm />} />
         <Route path="/user/verify/:bidId" element={<VerifyEmailOTP />} />
+        <Route path="/user/bidstatus" element={<CheckBidStatus/>} />
+      
 
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/user" replace />} />

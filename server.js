@@ -20,7 +20,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api', require('./routes/userRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/email', require('./routes/emailRoutes'));
-
+app.use('/api', require("./routes/bidStatus") );
 // Test route
 // app.get('/', (req, res) => res.send('Bidding App API Running'));
 app.use(express.static(path.join(__dirname, "./frontend/dist")));
