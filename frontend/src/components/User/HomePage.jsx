@@ -8,7 +8,7 @@ function HomePage() {
   return (
     <div>
     {/* <Navbar/> */}
-    <HeroSection/>
+    {/* <HeroSection/> */}
     <ProductList/>
     <Footer/>
   
