@@ -1,5 +1,5 @@
 // src/components/User/VerifyEmail.jsx
-import React from 'react';
+import React from "react";
 
 const VerifyEmail = ({ handleEmailVerify, verificationMessage }) => {
   return (
@@ -11,9 +11,7 @@ const VerifyEmail = ({ handleEmailVerify, verificationMessage }) => {
       >
         Verify Email
       </button>
-      {verificationMessage && (
-        <span className="ml-3 text-sm text-gray-600">{verificationMessage}</span>
-      )}
+      {verificationMessage && <span className="ml-3 text-sm text-gray-600">{verificationMessage}</span>}
     </div>
   );
 };
