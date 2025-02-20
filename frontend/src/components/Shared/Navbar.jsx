@@ -7,12 +7,12 @@ const Navbar = () => {
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         <div className="text-xl font-semibold text-gray-800">ScrapBid</div>
         <div className="flex gap-6 items-center">
-          <Link to="/" className="text-gray-800 font-medium hover:text-blue-500">
+          {/* <Link to="/" className="text-gray-800 font-medium hover:text-blue-500">
             Home
-          </Link>
-          <Link to="/categories" className="text-gray-800 font-medium hover:text-blue-500">
+          </Link> */}
+          {/* <Link to="/categories" className="text-gray-800 font-medium hover:text-blue-500">
             Categories
-          </Link>
+          </Link> */}
           <Link to="/how-it-works" className="text-gray-800 font-medium hover:text-blue-500">
             How It Works
           </Link>

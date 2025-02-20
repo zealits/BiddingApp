@@ -29,7 +29,7 @@ const ImageCarousel = ({ images, alt }) => {
 
   return (
     <div className="relative mb-4">
-      <div className="w-full h-40 overflow-hidden rounded">
+      <div className="w-full h-70 overflow-hidden rounded">
         <img
           key={`carousel-image-${currentIndex}`} // Force remount on index change
           src={`data:${currentImage.contentType};base64,${currentImage.data}`}
