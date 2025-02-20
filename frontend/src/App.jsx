@@ -12,6 +12,7 @@ import Navbar from "./components/Shared/Navbar";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import HomePage from "./components/User/HomePage";
 import CheckBidStatus from "./components/User/CheckBid";
+import Contact from "./components/User/ContactUs";
 
 function App() {
   const location = useLocation();
@@ -41,6 +42,7 @@ function App() {
         <Route path="/user/bid/:productId" element={<BidForm />} />
         <Route path="/user/verify/:bidId" element={<VerifyEmailOTP />} />
         <Route path="/user/bidstatus" element={<CheckBidStatus />} />
+        <Route path="/contact" element={<Contact />} />
 
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/user" replace />} />
