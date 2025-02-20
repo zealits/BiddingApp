@@ -1,23 +1,26 @@
 // src/App.jsx
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import AdminLogin from './components/Admin/AdminLogin';
-import Dashboard from './components/Admin/Dashboard';
-import RegisterProduct from './components/Admin/RegisterProduct';
-import ViewBids from './components/Admin/ViewBids';
-import ProductList from './components/User/ProductList';
-import BidForm from './components/User/BidForm';
-import VerifyEmailOTP from './components/User/VerifyEmailOTP';
-import Navbar from './components/Shared/Navbar';
-import ProtectedRoute from './routes/ProtectedRoute';
-import HomePage from './components/User/HomePage';
-import CheckBidStatus from './components/User/CheckBid';
+import React from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import AdminLogin from "./components/Admin/AdminLogin";
+import Dashboard from "./components/Admin/Dashboard";
+import RegisterProduct from "./components/Admin/RegisterProduct";
+import ViewBids from "./components/Admin/ViewBids";
+import ProductList from "./components/User/ProductList";
+import BidForm from "./components/User/BidForm";
+import VerifyEmailOTP from "./components/User/VerifyEmailOTP";
+import Navbar from "./components/Shared/Navbar";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import HomePage from "./components/User/HomePage";
+import CheckBidStatus from "./components/User/CheckBid";
 
 function App() {
+  const location = useLocation();
+  const hideNavbar = location.pathname.startsWith("/admin");
+
   return (
     <>
-      {/* <Navbar /> */}
-      <Navbar/>
+      {!hideNavbar && <Navbar />}
+
       <Routes>
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -37,8 +40,7 @@ function App() {
         <Route path="/user" element={<HomePage />} />
         <Route path="/user/bid/:productId" element={<BidForm />} />
         <Route path="/user/verify/:bidId" element={<VerifyEmailOTP />} />
-        <Route path="/user/bidstatus" element={<CheckBidStatus/>} />
-      
+        <Route path="/user/bidstatus" element={<CheckBidStatus />} />
 
         {/* Fallback route */}
         <Route path="*" element={<Navigate to="/user" replace />} />
