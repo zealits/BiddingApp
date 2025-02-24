@@ -75,6 +75,40 @@ const ViewProducts = () => {
     setItemsPerPage(parseInt(e.target.value));
     setPage(1); // Reset to page 1 when items per page changes
   };
+  const handleSendEmail = async (bid) => {
+    // Validate that there is a recipient email address
+    if (!bid.email) {
+      alert("No recipient email found for this bid.");
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("adminToken");
+      // Construct the email body with bid details and approval message
+      const emailBody = `Bid Details:
+  Email: ${bid.email}
+  Phone: ${bid.phone}
+  Price: $${bid.price}
+  
+  Your bid has been approved.`;
+      
+      const response = await axios.post(
+        "/api/email/send-email",
+        {
+          to: bid.email,
+          subject: `Bid Approved for ${modalProductName}`,
+          text: emailBody,
+        },
+        { headers: { "x-auth-token": token } }
+      );
+      alert(response.data.message);
+    } catch (error) {
+      console.error("Error sending email", error);
+      alert("Failed to send email");
+    }
+  };
+  
+  
 
   // Only include verified bids
   const verifiedBids = bids.filter(bid => bid.isVerified);
@@ -222,6 +256,7 @@ const ViewProducts = () => {
                   </div>
                 )}
 
+               
 <div className="container mx-auto px-4">
   {!bidsLoading && verifiedBids.length > 0 ? (
     <div className="overflow-x-auto w-full">
@@ -243,37 +278,43 @@ const ViewProducts = () => {
                 )}
               </button>
             </th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
-              Email
-            </th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
-              Phone
-            </th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
-              Quantity
-            </th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
-              Date
-            </th>
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
-              Company
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {sortedBids.map((bid) => (
-            <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
-              <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
-              <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
-              <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
-              <td className="px-6 py-4 text-sm text-gray-800">{bid.quantity}</td>
-              <td className="px-6 py-4 text-sm text-gray-800">
-                {new Date(bid.createdAt).toLocaleDateString()}
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-800">{bid.company}</td>
-            </tr>
-          ))}
-        </tbody>
+           
+          {/* </tr> */}
+        
+        
+                      {/* <tr className="bg-gray-50"> */}
+                        {/* <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th> */}
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Email</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Quantity</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Date</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Company</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+  {sortedBids.map((bid) => (
+    <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
+      <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.quantity}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">
+        {new Date(bid.createdAt).toLocaleDateString()}
+      </td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.company}</td>
+      <td className="px-6 py-4">
+        <button
+          onClick={() => handleSendEmail(bid)}
+          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200"
+        >
+          Send Email
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
       </table>
     </div>
   ) : (
