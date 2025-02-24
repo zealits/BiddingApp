@@ -13,7 +13,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import HomePage from "./components/User/HomePage";
 import CheckBidStatus from "./components/User/CheckBid";
 import Contact from "./components/User/ContactUs";
-import EditProduct from "./components/Admin/editproduct";
+import EditProduct from "./components/Admin/EditProduct";
 
 function App() {
   const location = useLocation();
