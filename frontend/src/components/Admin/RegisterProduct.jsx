@@ -5,9 +5,16 @@ import { Plus, Minus, Upload, X } from "lucide-react";
 const RegisterProduct = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [deadline, setDeadline] = useState("");
   const [images, setImages] = useState([]);
-  const [message, setMessage] = useState("");
   const [specifications, setSpecifications] = useState([{ key: "", value: "" }]);
+  
+  // New state for popup
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+  const [popupType, setPopupType] = useState(""); // "success" or "error"
+  
   const fileInputRef = useRef(null);
 
   const handleAddSpecification = () => {
@@ -50,12 +57,13 @@ const RegisterProduct = () => {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
+      formData.append("quantity", quantity);
+      formData.append("deadline", deadline);
       formData.append("specifications", JSON.stringify(specifications));
       images.forEach((file) => {
         formData.append("images", file);
       });
 
-      console.log(formData);
       await axios.post("/api/admin/product", formData, {
         headers: {
           "x-auth-token": token,
@@ -63,36 +71,49 @@ const RegisterProduct = () => {
         },
       });
 
-      setMessage("Product registered successfully");
+      setPopupMessage("Commodity registered successfully");
+      setPopupType("success");
+      
+      // Reset the form
       setName("");
       setDescription("");
+      setQuantity(1);
+      setDeadline("");
       setImages([]);
       setSpecifications([{ key: "", value: "" }]);
     } catch (err) {
-      setMessage("Error registering product");
+      setPopupMessage("Error registering commodity");
+      setPopupType("error");
+    } finally {
+      setPopupVisible(true);
     }
+  };
+
+  const closePopup = () => {
+    setPopupVisible(false);
+    setPopupMessage("");
+    setPopupType("");
   };
 
   return (
     <div className="max-w-4xl mx-auto">
       <div>
         <div className="p-6 border-b border-gray-900">
-          <h2 className="text-2xl font-semibold text-gray-800">Register New Product</h2>
-          <p className="text-gray-500 mt-1">Add a new product to your inventory</p>
+          <h2 className="text-2xl font-semibold text-gray-800">Register New Listing</h2>
         </div>
-
-        {message && <div className="mx-6 mt-6 p-4 rounded-lg bg-blue-50 text-blue-700">{message}</div>}
 
         <form onSubmit={handleRegister} className="p-6 space-y-6">
           <div className="grid grid-cols-1 gap-6">
-            {/* Product Name */}
+            {/* Commodity Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Commodity Name *
+              </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter product name"
+                placeholder="Enter Commodity Name"
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                 required
               />
@@ -100,24 +121,58 @@ const RegisterProduct = () => {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description *
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter product description"
+                placeholder="Enter Commodity description"
                 rows="4"
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+              />
+            </div>
+
+            {/* Quantity */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quantity *
+              </label>
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="Enter Quantity"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                required
+                min="1"
+              />
+            </div>
+
+            {/* Deadline */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Deadline *
+              </label>
+              <input
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                required
               />
             </div>
 
             {/* Specifications */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Specifications</label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Specifications
+                </label>
                 <button
                   type="button"
                   onClick={handleAddSpecification}
-                  className="flex items-center gap-2 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition duration-200"
+                  className="flex items-center gap-2 px-3 py-1 text-sm text-black hover:bg-blue-50 rounded-lg transition duration-200"
                 >
                   <Plus className="w-4 h-4" />
                   Add Specification
@@ -129,14 +184,18 @@ const RegisterProduct = () => {
                     <input
                       type="text"
                       value={spec.key}
-                      onChange={(e) => handleSpecificationChange(index, "key", e.target.value)}
+                      onChange={(e) =>
+                        handleSpecificationChange(index, "key", e.target.value)
+                      }
                       placeholder="Key (e.g. Weight)"
                       className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                     />
                     <input
                       type="text"
                       value={spec.value}
-                      onChange={(e) => handleSpecificationChange(index, "value", e.target.value)}
+                      onChange={(e) =>
+                        handleSpecificationChange(index, "value", e.target.value)
+                      }
                       placeholder="Value (e.g. 20kg)"
                       className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
                     />
@@ -156,7 +215,9 @@ const RegisterProduct = () => {
 
             {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Product Images *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Commodity Images *
+              </label>
               <div
                 className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:bg-gray-50 transition duration-200 cursor-pointer"
                 onDragOver={handleDragOver}
@@ -164,7 +225,9 @@ const RegisterProduct = () => {
                 onClick={() => fileInputRef.current.click()}
               >
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 mb-1">Drag and drop images here, or click to select</p>
+                <p className="text-gray-600 mb-1">
+                  Drag and drop images here, or click to select
+                </p>
                 <p className="text-sm text-gray-400">You can upload multiple images</p>
               </div>
               <input
@@ -204,13 +267,56 @@ const RegisterProduct = () => {
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition duration-200"
+              className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-black focus:ring-4 focus:ring-blue-200 transition duration-200"
             >
-              Register Product
+              Register Commodity
             </button>
           </div>
         </form>
       </div>
+
+      {/* Closaable Popup */}
+      {popupVisible && (
+  <div className="fixed inset-0 z-10 flex items-center justify-center">
+    {/* Background Overlay */}
+    <div className="absolute inset-0  bg-opacity-60 backdrop-blur-sm pointer-events-none"></div>
+
+    {/* Popup Content */}
+    <div
+      className={`relative bg-white rounded-2xl p-6 w-96 shadow-2xl border ${
+        popupType === "success" ? "border-black" : "border-black"
+      }`}
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h3
+          className={`text-2xl font-semibold ${
+            popupType === "success" ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {popupType === "success"
+            ? "Commodity Registered"
+            : "Registration Error"}
+        </h3>
+        <button
+          onClick={closePopup}
+          className="text-gray-500 hover:text-gray-700 transition duration-200"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      <p className="text-base text-gray-600">{popupMessage}</p>
+      <div className="mt-6">
+        <button
+          onClick={closePopup}
+          className="w-full bg-black text-white py-3 rounded-lg hover:bg-green-500 transition duration-200"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

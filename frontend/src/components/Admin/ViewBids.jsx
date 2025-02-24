@@ -85,7 +85,6 @@ const ViewProducts = () => {
   Email: ${bid.email}
   Phone: ${bid.phone}
   Price: $${bid.price}
-  Status: ${bid.isVerified ? "Verified" : "Pending"}
   
   Your bid has been approved.`;
       
@@ -106,9 +105,13 @@ const ViewProducts = () => {
   };
   
   
+
+  // Only include verified bids
+  const verifiedBids = bids.filter(bid => bid.isVerified);
+
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="bg-white rounded-xl  p-6">
+      <div className="bg-white rounded-xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-1">View Products</h2>
@@ -130,10 +133,9 @@ const ViewProducts = () => {
           </div>
         </div>
 
-        {/* add here option for taking number of product page per page  */}
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
           </div>
         )}
 
@@ -156,7 +158,9 @@ const ViewProducts = () => {
                 <div className="relative h-48">
                   <img
                     src={
-                      product.images[0] ? `data:${product.images[0].contentType};base64,${product.images[0].data}` : ""
+                      product.images[0]
+                        ? `data:${product.images[0].contentType};base64,${product.images[0].data}`
+                        : ""
                     }
                     alt={product.name}
                     className="w-full h-full object-cover"
@@ -167,7 +171,7 @@ const ViewProducts = () => {
                   <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
                   <button
                     onClick={() => handleViewBids(product._id, product.name)}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center gap-2"
+                    className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-black transition duration-200 flex items-center justify-center gap-2"
                   >
                     <Package className="w-4 h-4" />
                     View Bids
@@ -232,7 +236,7 @@ const ViewProducts = () => {
               <div className="flex-1 overflow-y-auto min-h-0 p-6">
                 {bidsLoading && (
                   <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
                   </div>
                 )}
 
@@ -243,35 +247,32 @@ const ViewProducts = () => {
                   </div>
                 )}
 
-{!bidsLoading && bids.length > 0 && (
-  <div className="overflow-x-auto">
-    <table className="w-full">
-    <thead className="sticky top-0 bg-white shadow-sm">
-  <tr className="bg-gray-50">
-    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Email</th>
-    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
-    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th>
-    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Status</th>
-    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Action</th>
-  </tr>
-</thead>
-<tbody className="divide-y divide-gray-200">
-  {bids.map((bid) => (
-    <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
-      <td className="px-6 py-4">
-        <span
-          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-            bid.isVerified ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"
-          }`}
-        >
-          {bid.isVerified ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-          {bid.isVerified ? "Verified" : "Pending"}
-        </span>
-      </td>
-      <td className="px-6 py-4">
+                {!bidsLoading && verifiedBids.length > 0 ? (
+                  <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="sticky top-0 bg-white shadow-sm">
+                      <tr className="bg-gray-50">
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Email</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Quantity</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Date</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Company</th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {verifiedBids.map((bid) => (
+                        <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
+                          <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
+                          <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
+                          <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
+                          <td className="px-6 py-4 text-sm text-gray-800">{bid.quantity}</td>
+                          <td className="px-6 py-4 text-sm text-gray-800">
+                            {new Date(bid.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-800">{bid.company}</td>
+                          <td className="px-6 py-4">
         <button
           onClick={() => handleSendEmail(bid)}
           className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200"
@@ -279,18 +280,17 @@ const ViewProducts = () => {
           Send Email
         </button>
       </td>
-    </tr>
-  ))}
-</tbody>
-
-
-    </table>
-  </div>
-)}
-
-
-                {!bidsLoading && bids.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">No bids found for this product</div>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+              </div>
+                ) : (
+                  !bidsLoading && (
+                    <div className="text-center py-12 text-gray-500">
+                      No verified bids found for this product
+                    </div>
+                  )
                 )}
               </div>
             </motion.div>
