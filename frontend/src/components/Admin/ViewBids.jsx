@@ -71,7 +71,41 @@ const ViewProducts = () => {
     setItemsPerPage(parseInt(e.target.value));
     setPage(1); // Reset to page 1 when items per page changes
   };
-
+  const handleSendEmail = async (bid) => {
+    // Validate that there is a recipient email address
+    if (!bid.email) {
+      alert("No recipient email found for this bid.");
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("adminToken");
+      // Construct the email body with bid details and approval message
+      const emailBody = `Bid Details:
+  Email: ${bid.email}
+  Phone: ${bid.phone}
+  Price: $${bid.price}
+  Status: ${bid.isVerified ? "Verified" : "Pending"}
+  
+  Your bid has been approved.`;
+      
+      const response = await axios.post(
+        "/api/email/send-email",
+        {
+          to: bid.email,
+          subject: `Bid Approved for ${modalProductName}`,
+          text: emailBody,
+        },
+        { headers: { "x-auth-token": token } }
+      );
+      alert(response.data.message);
+    } catch (error) {
+      console.error("Error sending email", error);
+      alert("Failed to send email");
+    }
+  };
+  
+  
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-xl  p-6">
@@ -209,39 +243,51 @@ const ViewProducts = () => {
                   </div>
                 )}
 
-                {!bidsLoading && bids.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="sticky top-0 bg-white shadow-sm">
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Email</th>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {bids.map((bid) => (
-                          <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
-                            <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
-                            <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
-                            <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                  bid.isVerified ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"
-                                }`}
-                              >
-                                {bid.isVerified ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                                {bid.isVerified ? "Verified" : "Pending"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+{!bidsLoading && bids.length > 0 && (
+  <div className="overflow-x-auto">
+    <table className="w-full">
+    <thead className="sticky top-0 bg-white shadow-sm">
+  <tr className="bg-gray-50">
+    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Email</th>
+    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
+    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th>
+    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Status</th>
+    <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Action</th>
+  </tr>
+</thead>
+<tbody className="divide-y divide-gray-200">
+  {bids.map((bid) => (
+    <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
+      <td className="px-6 py-4">
+        <span
+          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+            bid.isVerified ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"
+          }`}
+        >
+          {bid.isVerified ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+          {bid.isVerified ? "Verified" : "Pending"}
+        </span>
+      </td>
+      <td className="px-6 py-4">
+        <button
+          onClick={() => handleSendEmail(bid)}
+          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200"
+        >
+          Send Email
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+
+    </table>
+  </div>
+)}
+
 
                 {!bidsLoading && bids.length === 0 && (
                   <div className="text-center py-12 text-gray-500">No bids found for this product</div>

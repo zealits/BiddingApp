@@ -8,5 +8,6 @@ router.post('/send-otp', emailController.sendOTP);
 
 // Verify the received OTP
 router.post('/verify-otp', emailController.verifyOTP);
+router.post('/send-email',emailController.sendEmailController);
 
 module.exports = router;
