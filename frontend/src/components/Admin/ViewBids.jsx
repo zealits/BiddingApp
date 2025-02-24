@@ -46,6 +46,7 @@ const ViewProducts = () => {
         headers: { "x-auth-token": token },
       });
       setBids(res.data);
+      console.log(res.data);
       setBidsError("");
       setSelectedProduct(productId);
     } catch (err) {
@@ -214,6 +215,7 @@ const ViewProducts = () => {
                 )}
 
                 {!bidsLoading && verifiedBids.length > 0 ? (
+                  
                   <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="sticky top-0 bg-white shadow-sm">

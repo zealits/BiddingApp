@@ -123,7 +123,7 @@ exports.getProducts = async (req, res) => {
 exports.getProductBids = async (req, res) => {
   try {
     const productId = req.params.id;
-    const bids = await Bid.find({ product: productId }, "email phone price isVerified status createdAt").sort({ createdAt: -1 });
+    const bids = await Bid.find({ product: productId }, "email phone price company quantity isVerified status createdAt").sort({ createdAt: -1 });
     res.json(bids);
   } catch (err) {
     console.error(err.message);
