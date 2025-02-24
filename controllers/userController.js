@@ -6,7 +6,8 @@ const sendEmail = require("../utils/sendEmail");
 
 // Submit a bid for a product and send an OTP for bid verification
 exports.submitBid = async (req, res) => {
-  const { productId, email, phone, price } = req.body;
+  // Extract company and quantity along with other fields
+  const { productId, email, phone, price, company, quantity } = req.body;
   console.log(req.body);
   try {
     // Ensure the product exists
@@ -22,6 +23,8 @@ exports.submitBid = async (req, res) => {
       email,
       phone,
       price,
+      company,
+      quantity,
       otp,
       isVerified: false,
     });
@@ -36,7 +39,7 @@ exports.submitBid = async (req, res) => {
       email: email,
       subject: subject,
       html: html,
-      attachments: [], // You can add attachments if needed
+      attachments: [],
     };
 
     // Send email using sendEmail function

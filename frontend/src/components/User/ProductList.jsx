@@ -4,57 +4,44 @@ import axios from "axios";
 import ImageCarousel from "./ImageCarousel";
 import { ChevronLeft, ChevronRight, Package, Timer, ArrowRight } from "lucide-react";
 
-// Separate ImageCarousel component with navigation controls
-// const ImageCarousel = ({ images, alt }) => {
-//   console.log(images);
-//   const [currentIndex, setCurrentIndex] = useState(0);
+// Helper function to calculate time left until deadline
+const calculateTimeLeft = (deadline) => {
+  const total = new Date(deadline) - new Date();
+  const days = Math.floor(total / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((total / (1000 * 60)) % 60);
+  return { total, days, hours, minutes };
+};
 
-//   const nextSlide = (e) => {
-//     e.stopPropagation();
-//     setCurrentIndex((prev) => (prev + 1) % images.length);
-//   };
+// Countdown component updates every minute based on the deadline prop
+const Countdown = ({ deadline }) => {
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(deadline));
 
-//   const prevSlide = (e) => {
-//     e.stopPropagation();
-//     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-//   };
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft(deadline));
+    }, 60000); // update every minute
 
-//   return (
-//     <div className="relative w-full h-full">
-//       <img
-//         src={images[currentIndex]}
-//         alt={`${alt} - Image ${currentIndex + 1}`}
-//         className="w-full h-full object-cover"
-//       />
-//       {images.length > 1 && (
-//         <>
-//           <button
-//             onClick={prevSlide}
-//             className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
-//           >
-//             <ChevronLeft className="w-5 h-5" />
-//           </button>
-//           <button
-//             onClick={nextSlide}
-//             className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
-//           >
-//             <ChevronRight className="w-5 h-5" />
-//           </button>
-//           <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-//             {images.map((_, idx) => (
-//               <div
-//                 key={idx}
-//                 className={`w-2 h-2 rounded-full transition-all ${
-//                   idx === currentIndex ? 'bg-white' : 'bg-white/50'
-//                 }`}
-//               />
-//             ))}
-//           </div>
-//         </>
-//       )}
-//     </div>
-//   );
-// };
+    return () => clearInterval(timer);
+  }, [deadline]);
+
+  if (timeLeft.total <= 0) {
+    return <span className="text-sm font-medium">Ended</span>;
+  }
+
+  let display;
+  if (timeLeft.days > 0) {
+    display = `${timeLeft.days} day${timeLeft.days > 1 ? "s" : ""} left`;
+  } else if (timeLeft.hours > 0) {
+    display = `${timeLeft.hours} hour${timeLeft.hours > 1 ? "s" : ""} left`;
+  } else if (timeLeft.minutes > 0) {
+    display = `${timeLeft.minutes} minute${timeLeft.minutes > 1 ? "s" : ""} left`;
+  } else {
+    display = "Less than a minute left";
+  }
+
+  return <span className="text-sm font-medium">{display}</span>;
+};
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -81,7 +68,9 @@ const ProductList = () => {
     <div className="min-h-screen bg-gray-50 py-12">
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">Featured Listings</h2>
+          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">
+            Available commodity
+          </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Discover unique items and place your bids on our carefully curated collection
           </p>
@@ -89,7 +78,7 @@ const ProductList = () => {
 
         {loading ? (
           <div className="flex justify-center items-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-gray-900"></div>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
@@ -111,18 +100,21 @@ const ProductList = () => {
 
                 <div className="p-6 flex flex-col flex-grow">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center gap-1 text-blue-600">
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-gray-600 transition-colors">
+                        {product.name}
+                      </h3>
+                      <p className="text-sm text-gray-500">Quantity: {product.quantity}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-black">
                       <Timer className="w-4 h-4" />
-                      <span className="text-sm font-medium">Active</span>
+                      {/* Use the deadline property from the database */}
+                      <Countdown deadline={product.deadline} />
                     </div>
                   </div>
 
                   <p className="text-gray-600 mb-6 line-clamp-3">{product.description}</p>
 
-                  {/* Specifications section */}
                   {product.specifications && product.specifications.length > 0 && (
                     <div className="mb-6">
                       <h4 className="text-sm font-medium text-gray-900 mb-3">Specifications</h4>
@@ -139,7 +131,7 @@ const ProductList = () => {
 
                   <Link
                     to={`/user/bid/${product._id}`}
-                    className="mt-auto flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:bg-blue-700 hover:shadow-md group"
+                    className="mt-auto flex items-center justify-center gap-2 bg-gray-900 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:bg-black hover:shadow-md group"
                   >
                     Place Bid
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -150,7 +142,6 @@ const ProductList = () => {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 mt-12">
             <button
@@ -168,7 +159,7 @@ const ProductList = () => {
                   key={pageNum}
                   onClick={() => setPage(pageNum)}
                   className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 ${
-                    page === pageNum ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
+                    page === pageNum ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   {pageNum}

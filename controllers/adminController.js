@@ -48,7 +48,7 @@ exports.loginAdmin = async (req, res) => {
 // backend/controllers/adminController.js
 
 exports.registerProduct = async (req, res) => {
-  const { name, description, specifications } = req.body;
+  const { name, description, specifications, quantity, deadline } = req.body; // Include deadline in destructuring
   console.log(req.body);
 
   try {
@@ -68,10 +68,21 @@ exports.registerProduct = async (req, res) => {
       parsedSpecifications = Array.isArray(specifications) ? specifications : [];
     }
 
+    // Convert quantity to a number (default to 1 if not provided)
+    const productQuantity = Number(quantity) || 1;
+
+    // Validate deadline (ensure it's a valid date)
+    const productDeadline = deadline ? new Date(deadline) : null;
+    if (productDeadline && isNaN(productDeadline.getTime())) {
+      return res.status(400).json({ msg: "Invalid deadline format" });
+    }
+
     const newProduct = new Product({
       name,
       description,
+      quantity: productQuantity, // Add the quantity field
       specifications: parsedSpecifications,
+      deadline: productDeadline, // Add the deadline field
     });
 
     // If images were uploaded, process each file and store in the images array
@@ -112,7 +123,7 @@ exports.getProducts = async (req, res) => {
 exports.getProductBids = async (req, res) => {
   try {
     const productId = req.params.id;
-    const bids = await Bid.find({ product: productId }, "email phone price isVerified");
+    const bids = await Bid.find({ product: productId }, "email phone price isVerified status createdAt").sort({ createdAt: -1 });
     res.json(bids);
   } catch (err) {
     console.error(err.message);
