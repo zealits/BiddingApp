@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Package, Gavel, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Package, Gavel, LogOut, User,Edit } from "lucide-react";
 
 const Dashboard = () => {
   const location = useLocation();
@@ -10,6 +10,8 @@ const Dashboard = () => {
     { path: "/admin/register-product", icon: Package, label: "Register Commodity " },
     { path: "/admin/view-bids", icon: Gavel, label: "View Listing Bids" },
     { path: "/admin/profile", icon: User, label: "Profile" },
+    { path: "/admin/edit-product", icon: Edit, label: "Edit Commodity" },
+
   ];
 
   const handleLogout = () => {
