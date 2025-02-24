@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, Package, Check, AlertCircle } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Package, Check, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
@@ -16,6 +16,9 @@ const ViewProducts = () => {
   const [bidsError, setBidsError] = useState("");
   const [modalProductName, setModalProductName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // New state for sorting order on Price
+  const [priceSortOrder, setPriceSortOrder] = useState("asc");
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -46,6 +49,7 @@ const ViewProducts = () => {
         headers: { "x-auth-token": token },
       });
       setBids(res.data);
+      console.log(res.data);
       setBidsError("");
       setSelectedProduct(productId);
     } catch (err) {
@@ -108,6 +112,11 @@ const ViewProducts = () => {
 
   // Only include verified bids
   const verifiedBids = bids.filter(bid => bid.isVerified);
+
+  // Create a sorted version of the bids based on the current sort order
+  const sortedBids = [...verifiedBids].sort((a, b) =>
+    priceSortOrder === "asc" ? a.price - b.price : b.price - a.price
+  );
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -247,12 +256,34 @@ const ViewProducts = () => {
                   </div>
                 )}
 
-                {!bidsLoading && verifiedBids.length > 0 ? (
-                  <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="sticky top-0 bg-white shadow-sm">
-                      <tr className="bg-gray-50">
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th>
+               
+<div className="container mx-auto px-4">
+  {!bidsLoading && verifiedBids.length > 0 ? (
+    <div className="overflow-x-auto w-full">
+      <table className="min-w-full w-full table-auto">
+        <thead className="sticky top-0 bg-white shadow-sm">
+          <tr className="bg-gray-50">
+            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+              <button
+                onClick={() =>
+                  setPriceSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+                }
+                className="flex items-center space-x-2 focus:outline-none hover:bg-gray-200 px-2 py-1 rounded"
+              >
+                <span>Price</span>
+                {priceSortOrder === "asc" ? (
+                  <ChevronUp className="inline-block w-4 h-4" />
+                ) : (
+                  <ChevronDown className="inline-block w-4 h-4" />
+                )}
+              </button>
+            </th>
+           
+          {/* </tr> */}
+        
+        
+                      {/* <tr className="bg-gray-50"> */}
+                        {/* <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th> */}
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Email</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
                         <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Quantity</th>
@@ -262,17 +293,17 @@ const ViewProducts = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {verifiedBids.map((bid) => (
-                        <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
-                          <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
-                          <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
-                          <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
-                          <td className="px-6 py-4 text-sm text-gray-800">{bid.quantity}</td>
-                          <td className="px-6 py-4 text-sm text-gray-800">
-                            {new Date(bid.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-800">{bid.company}</td>
-                          <td className="px-6 py-4">
+  {sortedBids.map((bid) => (
+    <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
+      <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.quantity}</td>
+      <td className="px-6 py-4 text-sm text-gray-800">
+        {new Date(bid.createdAt).toLocaleDateString()}
+      </td>
+      <td className="px-6 py-4 text-sm text-gray-800">{bid.company}</td>
+      <td className="px-6 py-4">
         <button
           onClick={() => handleSendEmail(bid)}
           className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200"
@@ -280,18 +311,22 @@ const ViewProducts = () => {
           Send Email
         </button>
       </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-              </div>
-                ) : (
-                  !bidsLoading && (
-                    <div className="text-center py-12 text-gray-500">
-                      No verified bids found for this product
-                    </div>
-                  )
-                )}
+    </tr>
+  ))}
+</tbody>
+
+      </table>
+    </div>
+  ) : (
+    !bidsLoading && (
+      <div className="text-center py-12 text-gray-500">
+        No verified bids found for this product
+      </div>
+    )
+  )}
+</div>
+
+
               </div>
             </motion.div>
           </motion.div>
