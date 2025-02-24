@@ -13,6 +13,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import HomePage from "./components/User/HomePage";
 import CheckBidStatus from "./components/User/CheckBid";
 import Contact from "./components/User/ContactUs";
+import EditProduct from "./components/Admin/editproduct";
 
 function App() {
   const location = useLocation();
@@ -35,6 +36,8 @@ function App() {
         >
           <Route path="register-product" element={<RegisterProduct />} />
           <Route path="view-bids" element={<ViewBids />} />
+          <Route path="edit-product" element={<EditProduct/>} />
+          
         </Route>
 
         {/* User Routes */}

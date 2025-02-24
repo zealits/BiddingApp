@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, Package, Check, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  Check,
+  AlertCircle,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
+import PopupModal from "../../models/PopupModal"; // Updated: Import the PopupModal component
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
@@ -16,18 +26,20 @@ const ViewProducts = () => {
   const [bidsError, setBidsError] = useState("");
   const [modalProductName, setModalProductName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // New state for sorting order on Price
   const [priceSortOrder, setPriceSortOrder] = useState("asc");
+  const [popup, setPopup] = useState({ visible: false, message: "", type: "info" });
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("adminToken");
-        const res = await axios.get(`/api/admin/products?page=${page}&limit=${itemsPerPage}`, {
-          headers: { "x-auth-token": token },
-        });
+        const res = await axios.get(
+          `/api/admin/products?page=${page}&limit=${itemsPerPage}`,
+          {
+            headers: { "x-auth-token": token },
+          }
+        );
         setProducts(res.data.products);
         setTotalPages(res.data.totalPages);
         setError("");
@@ -73,25 +85,24 @@ const ViewProducts = () => {
 
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(parseInt(e.target.value));
-    setPage(1); // Reset to page 1 when items per page changes
+    setPage(1);
   };
+
   const handleSendEmail = async (bid) => {
-    // Validate that there is a recipient email address
     if (!bid.email) {
-      alert("No recipient email found for this bid.");
+      setPopup({ visible: true, message: "No recipient email found for this bid.", type: "error" });
       return;
     }
-    
+
     try {
       const token = localStorage.getItem("adminToken");
-      // Construct the email body with bid details and approval message
       const emailBody = `Bid Details:
-  Email: ${bid.email}
-  Phone: ${bid.phone}
-  Price: $${bid.price}
-  
-  Your bid has been approved.`;
-      
+Email: ${bid.email}
+Phone: ${bid.phone}
+Price: $${bid.price}
+
+Your bid has been approved.`;
+
       const response = await axios.post(
         "/api/email/send-email",
         {
@@ -101,19 +112,14 @@ const ViewProducts = () => {
         },
         { headers: { "x-auth-token": token } }
       );
-      alert(response.data.message);
+      setPopup({ visible: true, message: response.data.message, type: "success" });
     } catch (error) {
       console.error("Error sending email", error);
-      alert("Failed to send email");
+      setPopup({ visible: true, message: "Failed to send email", type: "error" });
     }
   };
-  
-  
 
-  // Only include verified bids
-  const verifiedBids = bids.filter(bid => bid.isVerified);
-
-  // Create a sorted version of the bids based on the current sort order
+  const verifiedBids = bids.filter((bid) => bid.isVerified);
   const sortedBids = [...verifiedBids].sort((a, b) =>
     priceSortOrder === "asc" ? a.price - b.price : b.price - a.price
   );
@@ -123,11 +129,17 @@ const ViewProducts = () => {
       <div className="bg-white rounded-xl p-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-1">View Products</h2>
-            <p className="text-gray-500">Manage your product listings and view bids</p>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-1">
+              View Products
+            </h2>
+            <p className="text-gray-500">
+              Manage your product listings and view bids
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-gray-700 font-medium">Products per page:</label>
+            <label className="text-gray-700 font-medium">
+              Products per page:
+            </label>
             <select
               value={itemsPerPage}
               onChange={handleItemsPerPageChange}
@@ -176,8 +188,12 @@ const ViewProducts = () => {
                   />
                 </div>
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{product.name}</h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    {product.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    {product.description}
+                  </p>
                   <button
                     onClick={() => handleViewBids(product._id, product.name)}
                     className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-black transition duration-200 flex items-center justify-center gap-2"
@@ -191,7 +207,6 @@ const ViewProducts = () => {
           </div>
         )}
 
-        {/* Pagination */}
         <div className="flex items-center justify-between mt-8 px-4">
           <button
             disabled={page === 1}
@@ -215,7 +230,6 @@ const ViewProducts = () => {
         </div>
       </div>
 
-      {/* Bids Modal */}
       <AnimatePresence>
         {isModalOpen && selectedProduct && (
           <motion.div
@@ -234,10 +248,17 @@ const ViewProducts = () => {
             >
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800">Bids for {modalProductName}</h3>
-                  <p className="text-sm text-gray-500 mt-1">View and manage bids for this product</p>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    Bids for {modalProductName}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    View and manage bids for this product
+                  </p>
                 </div>
-                <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg transition duration-200">
+                <button
+                  onClick={closeModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition duration-200"
+                >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
@@ -256,82 +277,107 @@ const ViewProducts = () => {
                   </div>
                 )}
 
-               
-<div className="container mx-auto px-4">
-  {!bidsLoading && verifiedBids.length > 0 ? (
-    <div className="overflow-x-auto w-full">
-      <table className="min-w-full w-full table-auto">
-        <thead className="sticky top-0 bg-white shadow-sm">
-          <tr className="bg-gray-50">
-            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
-              <button
-                onClick={() =>
-                  setPriceSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-                }
-                className="flex items-center space-x-2 focus:outline-none hover:bg-gray-200 px-2 py-1 rounded"
-              >
-                <span>Price</span>
-                {priceSortOrder === "asc" ? (
-                  <ChevronUp className="inline-block w-4 h-4" />
-                ) : (
-                  <ChevronDown className="inline-block w-4 h-4" />
-                )}
-              </button>
-            </th>
-           
-          {/* </tr> */}
-        
-        
-                      {/* <tr className="bg-gray-50"> */}
-                        {/* <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th> */}
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Email</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Quantity</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Date</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Company</th>
-                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-  {sortedBids.map((bid) => (
-    <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
-      <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.quantity}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">
-        {new Date(bid.createdAt).toLocaleDateString()}
-      </td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.company}</td>
-      <td className="px-6 py-4">
-        <button
-          onClick={() => handleSendEmail(bid)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200"
-        >
-          Send Email
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-      </table>
-    </div>
-  ) : (
-    !bidsLoading && (
-      <div className="text-center py-12 text-gray-500">
-        No verified bids found for this product
-      </div>
-    )
-  )}
-</div>
-
-
+                <div className="container mx-auto px-4">
+                  {!bidsLoading && verifiedBids.length > 0 ? (
+                    <div className="overflow-x-auto w-full">
+                      <table className="min-w-full w-full table-auto">
+                        <thead className="sticky top-0 bg-white shadow-sm">
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              <button
+                                onClick={() =>
+                                  setPriceSortOrder((prev) =>
+                                    prev === "asc" ? "desc" : "asc"
+                                  )
+                                }
+                                className="flex items-center space-x-2 focus:outline-none hover:bg-gray-200 px-2 py-1 rounded"
+                              >
+                                <span>Price</span>
+                                {priceSortOrder === "asc" ? (
+                                  <ChevronUp className="inline-block w-4 h-4" />
+                                ) : (
+                                  <ChevronDown className="inline-block w-4 h-4" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Email
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Phone
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Quantity
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Company
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {sortedBids.map((bid) => (
+                            <tr
+                              key={bid._id}
+                              className="hover:bg-gray-50 transition duration-200"
+                            >
+                              <td className="px-6 py-4 text-sm text-gray-800">
+                                ${bid.price}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-800">
+                                {bid.email}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-800">
+                                {bid.phone}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-800">
+                                {bid.quantity}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-800">
+                                {new Date(bid.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-800">
+                                {bid.company}
+                              </td>
+                              <td className="px-6 py-4">
+                                <button
+                                  onClick={() => handleSendEmail(bid)}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200"
+                                >
+                                  Send Email
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    !bidsLoading && (
+                      <div className="text-center py-12 text-gray-500">
+                        No verified bids found for this product
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {popup.visible && (
+        <PopupModal
+          message={popup.message}
+          type={popup.type}
+          onClose={() => setPopup({ ...popup, visible: false })}
+        />
+      )}
     </div>
   );
 };
