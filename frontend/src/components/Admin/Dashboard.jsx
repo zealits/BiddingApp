@@ -9,8 +9,8 @@ const Dashboard = () => {
   const navItems = [
     { path: "/admin/register-product", icon: Package, label: "Register Commodity " },
     { path: "/admin/view-bids", icon: Gavel, label: "View Listing Bids" },
-    { path: "/admin/profile", icon: User, label: "Profile" },
     { path: "/admin/edit-product", icon: Edit, label: "Edit Commodity" },
+    { path: "/admin/profile", icon: User, label: "Profile" },
 
   ];
 
