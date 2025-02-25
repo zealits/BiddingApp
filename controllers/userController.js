@@ -8,7 +8,7 @@ const sendEmail = require("../utils/sendEmail");
 exports.submitBid = async (req, res) => {
   // Extract company and quantity along with other fields
   const { productId, email, phone, price, company, quantity } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
   try {
     // Ensure the product exists
     const product = await Product.findById(productId);

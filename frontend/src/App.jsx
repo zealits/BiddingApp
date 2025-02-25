@@ -1,3 +1,4 @@
+//testing new deployment
 // src/App.jsx
 import React from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
@@ -13,6 +14,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import HomePage from "./components/User/HomePage";
 import CheckBidStatus from "./components/User/CheckBid";
 import Contact from "./components/User/ContactUs";
+import EditProduct from "./components/Admin/EditProduct";
 
 function App() {
   const location = useLocation();
@@ -35,6 +37,8 @@ function App() {
         >
           <Route path="register-product" element={<RegisterProduct />} />
           <Route path="view-bids" element={<ViewBids />} />
+          <Route path="edit-product" element={<EditProduct/>} />
+          
         </Route>
 
         {/* User Routes */}

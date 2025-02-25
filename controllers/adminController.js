@@ -137,17 +137,125 @@ exports.registerProduct = async (req, res) => {
   }
 };
 
+// Update an existing product (admin-protected)
+exports.updateProduct = async (req, res) => {
+  const { name, description, specifications, quantity, deadline } = req.body;
+  const productId = req.params.id; // Retrieve product ID from URL
+
+  try {
+    // Parse specifications if it's a JSON string
+    let parsedSpecifications = [];
+    if (typeof specifications === "string") {
+      try {
+        parsedSpecifications = JSON.parse(specifications);
+        if (!Array.isArray(parsedSpecifications)) {
+          parsedSpecifications = []; // Ensure it's an array
+        }
+      } catch (error) {
+        console.error("Invalid JSON format for specifications:", error);
+        return res.status(400).json({ msg: "Invalid specifications format" });
+      }
+    } else {
+      parsedSpecifications = Array.isArray(specifications) ? specifications : [];
+    }
+
+    // Convert quantity to a number (default to 1 if not provided)
+    const productQuantity = Number(quantity) || 1;
+
+    // Validate deadline (ensure it's a valid date)
+    const productDeadline = deadline ? new Date(deadline) : null;
+    if (productDeadline && isNaN(productDeadline.getTime())) {
+      return res.status(400).json({ msg: "Invalid deadline format" });
+    }
+
+    // Build update fields
+    const updateFields = {
+      name,
+      description,
+      quantity: productQuantity,
+      specifications: parsedSpecifications,
+      deadline: productDeadline,
+    };
+
+    // If images were uploaded, process each file and update the images array
+    if (req.files && req.files.length > 0) {
+      updateFields.images = req.files.map((file) => ({
+        data: file.buffer.toString("base64"),
+        contentType: file.mimetype,
+      }));
+    }
+
+    // Find and update the product by its ID
+    let product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+
+    product = await Product.findByIdAndUpdate(
+      productId,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    res.json({ msg: "Product updated successfully", product });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+
+// Delete a product (admin-protected)
+exports.deleteProduct = async (req, res) => {
+  const productId = req.params.id;
+
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+
+    await Product.findByIdAndDelete(productId);
+    res.json({ msg: "Product deleted successfully" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
 // View all bids for a given product (admin-protected)
 // Backend: Fetch paginated products
+// exports.getProducts = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 6;
+//     const skip = (page - 1) * limit;
+
+//     const products = await Product.find({}, "name description images quantity specifications deadline").sort({ createdAt: -1 }).skip(skip).limit(limit);
+
+//     const totalProducts = await Product.countDocuments();
+//     res.json({ products, totalPages: Math.ceil(totalProducts / limit) });
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).send("Server Error");
+//   }
+// };
 exports.getProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
     const skip = (page - 1) * limit;
+    const searchQuery = req.query.search || "";
 
-    const products = await Product.find({}, "name description quantity images deadline").sort({ createdAt: -1 }).skip(skip).limit(limit);
+    const query = searchQuery
+      ? { name: { $regex: searchQuery, $options: "i" } }
+      : {};
 
-    const totalProducts = await Product.countDocuments();
+    const products = await Product.find(query, "name description images quantity specifications deadline")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalProducts = await Product.countDocuments(query);
     res.json({ products, totalPages: Math.ceil(totalProducts / limit) });
   } catch (err) {
     console.error(err.message);

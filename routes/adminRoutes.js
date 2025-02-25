@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 
@@ -16,10 +15,12 @@ router.post('/register', adminController.registerAdmin);
 // Register a product with multiple image uploads (protected route)
 router.post('/product', auth, upload.array('images', 10), adminController.registerProduct);
 router.post('/approve-bid', auth, adminController.approveBid);
+router.put('/product/:id', auth, upload.array('images', 10), adminController.updateProduct);
+router.delete('/product/:id', auth, adminController.deleteProduct); // Add this line
+
 
 // View all bids route with pagination
 // router.get('/bids', auth, adminController.getAllBids);
-
 
 // View all products route with pagination
 router.get('/products', auth, adminController.getProducts);
@@ -29,7 +30,6 @@ router.get("/products/:id/bids",auth, adminController.getProductBids);
 
 // Fetch a single product by ID (protected route)
 router.get('/products/:id', auth, adminController.getProductById);
-
 
 
 module.exports = router;
