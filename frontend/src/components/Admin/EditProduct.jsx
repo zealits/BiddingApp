@@ -7,7 +7,7 @@ import {
   ChevronRight, 
   Plus, 
   Minus, 
-  Upload ,
+  Upload,
   Search 
 } from "lucide-react";
 import PopupModal from "../../models/PopupModal";
@@ -20,7 +20,7 @@ const ViewProducts = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
-  const [searchQuery, setSearchQuery] = useState(""); // Added search query state
+  const [searchQuery, setSearchQuery] = useState("");
 
   // State for currently selected product (for editing)
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -38,6 +38,9 @@ const ViewProducts = () => {
 
   // New deletion confirmation state
   const [deleteConfirmation, setDeleteConfirmation] = useState({ visible: false, product: null });
+  
+  // New state to handle deletion process
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch products with pagination
   useEffect(() => {
@@ -60,12 +63,12 @@ const ViewProducts = () => {
       }
     };
     fetchProducts();
-  }, [page, itemsPerPage, searchQuery]); // Added searchQuery as a dependency
+  }, [page, itemsPerPage, searchQuery]);
 
   // Handle search input change
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
-    setPage(1); // Reset to the first page when searching
+    setPage(1);
   };
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(parseInt(e.target.value));
@@ -166,6 +169,7 @@ const ViewProducts = () => {
   // Delete commodity handler
   const handleDeleteCommodity = async (productId) => {
     try {
+      setIsDeleting(true);
       const token = localStorage.getItem("adminToken");
       await axios.delete(`/api/admin/product/${productId}`, {
         headers: { "x-auth-token": token },
@@ -183,6 +187,8 @@ const ViewProducts = () => {
       console.error("Error deleting commodity", err);
       setPopup({ visible: true, message: "Error deleting commodity", type: "error" });
       setDeleteConfirmation({ visible: false, product: null });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -281,78 +287,77 @@ const ViewProducts = () => {
                   </div>
                   
                   <div className="p-4">
-  <h3 className="text-lg font-bold text-gray-800 mb-1 tracking-tight">
-    {product.name}
-  </h3>
-  <p className="text-gray-600 mb-3 line-clamp-2 text-sm">
-    {product.description}
-  </p>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1 tracking-tight">
+                      {product.name}
+                    </h3>
+                    <p className="text-gray-600 mb-3 line-clamp-2 text-sm">
+                      {product.description}
+                    </p>
 
-  {/* Enhanced deadline display */}
-  <div className={`flex items-center mb-3 p-2 rounded-md ${isUrgent ? "bg-red-50" : "bg-blue-50"}`}>
-    <svg
-      className={`w-4 h-4 mr-2 ${isUrgent ? "text-red-500" : "text-blue-500"}`}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-    <div>
-      <p className="text-xs font-medium text-gray-700">Deadline</p>
-      <p className={`text-xs ${isUrgent ? "text-red-600 font-semibold" : "text-blue-600"}`}>
-        {formattedDeadline} {isUrgent && `(${daysRemaining} days left)`}
-      </p>
-    </div>
-  </div>
+                    {/* Enhanced deadline display */}
+                    <div className={`flex items-center mb-3 p-2 rounded-md ${isUrgent ? "bg-red-50" : "bg-blue-50"}`}>
+                      <svg
+                        className={`w-4 h-4 mr-2 ${isUrgent ? "text-red-500" : "text-blue-500"}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-xs font-medium text-gray-700">Deadline</p>
+                        <p className={`text-xs ${isUrgent ? "text-red-600 font-semibold" : "text-blue-600"}`}>
+                          {formattedDeadline} {isUrgent && `(${daysRemaining} days left)`}
+                        </p>
+                      </div>
+                    </div>
 
-  <div className="flex gap-2">
-    <button
-      onClick={() => handleEditCommodity(product)}
-      className="w-1/2 bg-gradient-to-r from-gray-600 to-gray-900 text-white px-3 py-2 rounded-lg hover:from-gray-900 hover:to-gray-600 transition duration-300 flex items-center justify-center gap-1 font-medium shadow-sm"
-    >
-      <svg 
-        className="w-4 h-4" 
-        fill="none" 
-        stroke="currentColor" 
-        viewBox="0 0 24 24"
-      >
-        <path 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          strokeWidth="2" 
-          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
-        />
-      </svg>
-      Edit
-    </button>
-    <button
-      onClick={() => setDeleteConfirmation({ visible: true, product })}
-      className="w-1/2 bg-gradient-to-r from-red-600 to-red-900 text-white px-3 py-2 rounded-lg hover:from-red-900 hover:to-red-600 transition duration-300 flex items-center justify-center gap-1 font-medium shadow-sm"
-    >
-      <svg 
-        className="w-4 h-4" 
-        fill="none" 
-        stroke="currentColor" 
-        viewBox="0 0 24 24"
-      >
-        <path 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          strokeWidth="2" 
-          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
-        />
-      </svg>
-      Delete
-    </button>
-  </div>
-</div>
-
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditCommodity(product)}
+                        className="w-1/2 bg-gradient-to-r from-gray-600 to-gray-900 text-white px-3 py-2 rounded-lg hover:from-gray-900 hover:to-gray-600 transition duration-300 flex items-center justify-center gap-1 font-medium shadow-sm"
+                      >
+                        <svg 
+                          className="w-4 h-4" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth="2" 
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
+                          />
+                        </svg>
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmation({ visible: true, product })}
+                        className="w-1/2 bg-gradient-to-r from-red-600 to-red-900 text-white px-3 py-2 rounded-lg hover:from-red-900 hover:to-red-600 transition duration-300 flex items-center justify-center gap-1 font-medium shadow-sm"
+                      >
+                        <svg 
+                          className="w-4 h-4" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth="2" 
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                          />
+                        </svg>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </motion.div>
               );
             })}
@@ -630,17 +635,15 @@ const ViewProducts = () => {
                 <p>
                   <strong>Deadline:</strong> {new Date(deleteConfirmation.product.deadline).toLocaleDateString()}
                 </p>
-                {/* You can show additional details if needed */}
               </div>
               <p className="mb-4 text-red-600">Are you sure you want to delete this commodity?</p>
               <div className="flex gap-4">
                 <button
-                  onClick={() =>
-                    handleDeleteCommodity(deleteConfirmation.product._id)
-                  }
+                  onClick={() => handleDeleteCommodity(deleteConfirmation.product._id)}
+                  disabled={isDeleting}
                   className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition duration-200"
                 >
-                  Yes, Delete
+                  {isDeleting ? "Deleting..." : "Yes, Delete"}
                 </button>
                 <button
                   onClick={() => setDeleteConfirmation({ visible: false, product: null })}
