@@ -188,15 +188,38 @@ exports.deleteProduct = async (req, res) => {
 };
 // View all bids for a given product (admin-protected)
 // Backend: Fetch paginated products
+// exports.getProducts = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 6;
+//     const skip = (page - 1) * limit;
+
+//     const products = await Product.find({}, "name description images quantity specifications deadline").sort({ createdAt: -1 }).skip(skip).limit(limit);
+
+//     const totalProducts = await Product.countDocuments();
+//     res.json({ products, totalPages: Math.ceil(totalProducts / limit) });
+//   } catch (err) {
+//     console.error(err.message);
+//     res.status(500).send("Server Error");
+//   }
+// };
 exports.getProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 6;
     const skip = (page - 1) * limit;
+    const searchQuery = req.query.search || "";
 
-    const products = await Product.find({}, "name description images quantity specifications deadline").sort({ createdAt: -1 }).skip(skip).limit(limit);
+    const query = searchQuery
+      ? { name: { $regex: searchQuery, $options: "i" } }
+      : {};
 
-    const totalProducts = await Product.countDocuments();
+    const products = await Product.find(query, "name description images quantity specifications deadline")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalProducts = await Product.countDocuments(query);
     res.json({ products, totalPages: Math.ceil(totalProducts / limit) });
   } catch (err) {
     console.error(err.message);

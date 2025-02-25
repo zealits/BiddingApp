@@ -7,7 +7,8 @@ import {
   ChevronRight, 
   Plus, 
   Minus, 
-  Upload 
+  Upload ,
+  Search 
 } from "lucide-react";
 import PopupModal from "../../models/PopupModal";
 
@@ -19,6 +20,7 @@ const ViewProducts = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [searchQuery, setSearchQuery] = useState(""); // Added search query state
 
   // State for currently selected product (for editing)
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -44,7 +46,7 @@ const ViewProducts = () => {
         setLoading(true);
         const token = localStorage.getItem("adminToken");
         const res = await axios.get(
-          `/api/admin/products?page=${page}&limit=${itemsPerPage}`,
+          `/api/admin/products?page=${page}&limit=${itemsPerPage}&search=${searchQuery}`,
           { headers: { "x-auth-token": token } }
         );
         setProducts(res.data.products);
@@ -58,8 +60,13 @@ const ViewProducts = () => {
       }
     };
     fetchProducts();
-  }, [page, itemsPerPage]);
+  }, [page, itemsPerPage, searchQuery]); // Added searchQuery as a dependency
 
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to the first page when searching
+  };
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(parseInt(e.target.value));
     setPage(1);
@@ -192,6 +199,18 @@ const ViewProducts = () => {
             <p className="text-gray-500">Manage your product listings and edit commodities</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Search Input */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="border border-gray-300 rounded-md p-2 pl-10 focus:ring focus:ring-blue-200"
+              />
+              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            </div>
+            {/* Products per page dropdown */}
             <label className="text-gray-700 font-medium">Products per page:</label>
             <select
               value={itemsPerPage}

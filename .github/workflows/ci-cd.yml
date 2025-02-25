@@ -28,12 +28,12 @@ jobs:
         run: npm install
         working-directory: .
 
-      # # Step 4: Install frontend dependencies (commented out)
+      # # Step 4: Install frontend dependencies
       # - name: Install frontend dependencies
       #   run: npm install --force
       #   working-directory: ./frontend
 
-      # # Step 5: Build the frontend application (commented out)
+      # # Step 5: Build the frontend application
       # - name: Build frontend application
       #   run: npm run build
       #   working-directory: ./frontend
@@ -46,49 +46,48 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H dev.zealits.com >> ~/.ssh/known_hosts
 
-      # Step 7: Deploy to the server using git fetch/reset and npm ci for speed
+      # Step 7: Deploy to the server
       - name: Deploy to server
         if: github.ref == 'refs/heads/main'
         run: |
           ssh admin@dev.zealits.com << 'EOF'
-            # Backup config.env if it exists
+            # Backup the config.env file if it exists
             if [ -f ~/BiddingApp/config/config.env ]; then
               cp ~/BiddingApp/config/config.env ~/config.env.bak
             fi
 
-            # If repository exists, fetch changes and reset; otherwise, clone it
+            # Use git pull if the repository exists; otherwise, clone it
             if [ -d ~/BiddingApp ]; then
               cd ~/BiddingApp
-              git fetch origin
-              git reset --hard origin/main
+              git pull origin main
             else
               git clone https://github.com/zealits/BiddingApp.git ~/BiddingApp
               cd ~/BiddingApp
             fi
 
-            # Restore config.env if backup exists
+            # Restore the config.env file if a backup exists
             if [ -f ~/config.env.bak ]; then
               mv ~/config.env.bak ~/BiddingApp/config/config.env
             fi
 
-            # Install backend dependencies using npm ci (faster clean install)
-            npm ci
+            # Install backend dependencies
+            npm install
 
             # Install frontend dependencies and build
             cd frontend
-            npm ci --force
+            npm install --force
             npm run build
             cd ..
 
-            # Reload the application using PM2 for minimal downtime
+            # Restart the application using PM2
             if pm2 list | grep -q "BiddingApp"; then
-              echo "Reloading BiddingApp"
-              pm2 reload BiddingApp || pm2 restart BiddingApp
+              echo "Restarting BiddingApp"
+              pm2 restart BiddingApp
             else
               echo "Starting BiddingApp"
               pm2 start npm --name "BiddingApp" -- run dev
             fi
 
-            # Display PM2 process list for verification
+            # Check the status of PM2 processes
             pm2 list
           EOF
