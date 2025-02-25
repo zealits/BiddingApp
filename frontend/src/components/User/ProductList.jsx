@@ -83,62 +83,80 @@ const ProductList = () => {
         ) : products.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
             <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-xl text-gray-600">No products available for bidding at this time.</p>
+            <p className="text-xl text-gray-600">
+              No products available for bidding at this time.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => (
-              <div
-                key={product._id}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
-              >
-                {product.images && product.images.length > 0 && (
-                  <div className="relative w-full aspect-[4/3]">
-                    <ImageCarousel images={product.images} alt={product.name} />
-                  </div>
-                )}
-
-                <div className="p-6 flex flex-col flex-grow">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 group-hover:text-gray-600 transition-colors">
-                        {product.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">Quantity: {product.quantity}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-black">
-                      <Timer className="w-4 h-4" />
-                      {/* Use the deadline property from the database */}
-                      <Countdown deadline={product.deadline} />
-                    </div>
-                  </div>
-
-                  <p className="text-gray-600 mb-6 line-clamp-3">{product.description}</p>
-
-                  {product.specifications && product.specifications.length > 0 && (
-                    <div className="mb-6">
-                      <h4 className="text-sm font-medium text-gray-900 mb-3">Specifications</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {product.specifications.map((spec, index) => (
-                          <div key={index} className="bg-gray-50 p-2 rounded-lg">
-                            <div className="text-xs text-gray-500">{spec.key}</div>
-                            <div className="text-sm font-medium text-gray-900">{spec.value}</div>
-                          </div>
-                        ))}
-                      </div>
+            {products.map((product) => {
+              // Check if bid deadline is over
+              const isExpired = new Date(product.deadline) <= new Date();
+              const formattedDeadline = new Date(product.deadline).toLocaleDateString();
+              const timeLeft = calculateTimeLeft(product.deadline);
+              return (
+                <div
+                  key={product._id}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
+                >
+                  {product.images && product.images.length > 0 && (
+                    <div className="relative w-full aspect-[4/3]">
+                      <ImageCarousel images={product.images} alt={product.name} />
                     </div>
                   )}
 
-                  <Link
-                    to={`/user/bid/${product._id}`}
-                    className="mt-auto flex items-center justify-center gap-2 bg-gray-900 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:bg-black hover:shadow-md group"
-                  >
-                    Place Bid
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
+                  <div className="p-6 flex flex-col flex-grow">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900 group-hover:text-gray-600 transition-colors">
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">Quantity: {product.quantity}</p>
+                      </div>
+                      <div className="flex items-center gap-1 text-black">
+                        <Timer className="w-4 h-4" />
+                        {/* Use the deadline property from the database */}
+                        <Countdown deadline={product.deadline} />
+                      </div>
+                    </div>
+
+                    <p className="text-gray-600 mb-6 line-clamp-3">{product.description}</p>
+
+                    {product.specifications && product.specifications.length > 0 && (
+                      <div className="mb-6">
+                        <h4 className="text-sm font-medium text-gray-900 mb-3">Specifications</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {product.specifications.map((spec, index) => (
+                            <div key={index} className="bg-gray-50 p-2 rounded-lg">
+                              <div className="text-xs text-gray-500">{spec.key}</div>
+                              <div className="text-sm font-medium text-gray-900">{spec.value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Conditionally render "Place Bid" if deadline is not passed */}
+                    {!isExpired ? (
+                      <Link
+                        to={`/user/bid/${product._id}`}
+                        className="mt-auto flex items-center justify-center gap-2 bg-gray-900 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:bg-black hover:shadow-md group"
+                      >
+                        Place Bid
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                    ) : (
+                      <button
+                        disabled
+                        className="mt-auto flex items-center justify-center gap-2 bg-gray-300 text-white py-3 px-6 rounded-xl font-medium cursor-not-allowed"
+                      >
+                        Bid Ended
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

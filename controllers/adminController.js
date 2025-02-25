@@ -168,6 +168,24 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+
+// Delete a product (admin-protected)
+exports.deleteProduct = async (req, res) => {
+  const productId = req.params.id;
+
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+
+    await Product.findByIdAndDelete(productId);
+    res.json({ msg: "Product deleted successfully" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
 // View all bids for a given product (admin-protected)
 // Backend: Fetch paginated products
 exports.getProducts = async (req, res) => {

@@ -9,7 +9,7 @@ import {
   Minus, 
   Upload 
 } from "lucide-react";
-import PopupModal from "../../models/PopupModal"; // Updated: Import the PopupModal component
+import PopupModal from "../../models/PopupModal";
 
 const ViewProducts = () => {
   // Product list & pagination states
@@ -33,6 +33,9 @@ const ViewProducts = () => {
   const [popup, setPopup] = useState({ visible: false, message: "", type: "info" });
  
   const fileInputRef = useRef(null);
+
+  // New deletion confirmation state
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ visible: false, product: null });
 
   // Fetch products with pagination
   useEffect(() => {
@@ -59,7 +62,7 @@ const ViewProducts = () => {
 
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(parseInt(e.target.value));
-    setPage(1); // Reset to page 1 when items per page changes
+    setPage(1);
   };
 
   // Open edit commodity modal & prefill form fields
@@ -74,7 +77,7 @@ const ViewProducts = () => {
         ? product.specifications
         : [{ key: "", value: "" }]
     );
-    setImages([]); // Reset images so new ones can be added if needed
+    setImages([]);
   };
 
   // Handlers for dynamic specification fields
@@ -112,7 +115,7 @@ const ViewProducts = () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Update commodity handler (Updated: using PopupModal instead of alert)
+  // Update commodity handler using PopupModal instead of alert
   const handleUpdateCommodity = async (e) => {
     e.preventDefault();
     try {
@@ -141,7 +144,7 @@ const ViewProducts = () => {
       setPopup({ visible: true, message: "Commodity updated successfully", type: "success" });
       setSelectedProduct(null);
       
-      // Optionally refetch products after update
+      // Refetch products after update
       const res = await axios.get(
         `/api/admin/products?page=${page}&limit=${itemsPerPage}`,
         { headers: { "x-auth-token": token } }
@@ -150,6 +153,29 @@ const ViewProducts = () => {
     } catch (err) {
       console.error("Error updating commodity", err);
       setPopup({ visible: true, message: "Error updating commodity", type: "error" });
+    }
+  };
+
+  // Delete commodity handler
+  const handleDeleteCommodity = async (productId) => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      await axios.delete(`/api/admin/product/${productId}`, {
+        headers: { "x-auth-token": token },
+      });
+  
+      setPopup({ visible: true, message: "Commodity deleted successfully", type: "success" });
+      // Refetch products after deletion
+      const res = await axios.get(
+        `/api/admin/products?page=${page}&limit=${itemsPerPage}`,
+        { headers: { "x-auth-token": token } }
+      );
+      setProducts(res.data.products);
+      setDeleteConfirmation({ visible: false, product: null });
+    } catch (err) {
+      console.error("Error deleting commodity", err);
+      setPopup({ visible: true, message: "Error deleting commodity", type: "error" });
+      setDeleteConfirmation({ visible: false, product: null });
     }
   };
 
@@ -197,7 +223,7 @@ const ViewProducts = () => {
         {!loading && products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-4 py-6">
             {products.map((product) => {
-              // Format the deadline into a more human-friendly format
+              // Format the deadline into a human-friendly format
               const formattedDeadline = new Date(product.deadline).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "short",
@@ -205,7 +231,8 @@ const ViewProducts = () => {
               });
               
               // Calculate days remaining until deadline
-              const daysRemaining = Math.ceil((new Date(product.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+              const daysRemaining = Math.max(0, Math.ceil((new Date(product.deadline) - new Date()) / (1000 * 60 * 60 * 24)));
+
               const isUrgent = daysRemaining <= 7;
               
               return (
@@ -235,56 +262,78 @@ const ViewProducts = () => {
                   </div>
                   
                   <div className="p-4">
-                    <h3 className="text-lg font-bold text-gray-800 mb-1 tracking-tight">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-600 mb-3 line-clamp-2 text-sm">
-                      {product.description}
-                    </p>
-              
-                    {/* Enhanced deadline display */}
-                    <div className={`flex items-center mb-3 p-2 rounded-md ${isUrgent ? "bg-red-50" : "bg-blue-50"}`}>
-                      <svg
-                        className={`w-4 h-4 mr-2 ${isUrgent ? "text-red-500" : "text-blue-500"}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <div>
-                        <p className="text-xs font-medium text-gray-700">Deadline</p>
-                        <p className={`text-xs ${isUrgent ? "text-red-600 font-semibold" : "text-blue-600"}`}>
-                          {formattedDeadline} {isUrgent && `(${daysRemaining} days left)`}
-                        </p>
-                      </div>
-                    </div>
-              
-                    <button
-                      onClick={() => handleEditCommodity(product)}
-                      className="w-full bg-gradient-to-r from-gray-600 to-gray-900 text-white px-3 py-2 rounded-lg hover:from-gray-900 hover:to-gray-600 transition duration-300 flex items-center justify-center gap-1 font-medium shadow-sm"
-                    >
-                      <svg 
-                        className="w-4 h-4" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
-                        />
-                      </svg>
-                      Edit Commodity
-                    </button>
-                  </div>
+  <h3 className="text-lg font-bold text-gray-800 mb-1 tracking-tight">
+    {product.name}
+  </h3>
+  <p className="text-gray-600 mb-3 line-clamp-2 text-sm">
+    {product.description}
+  </p>
+
+  {/* Enhanced deadline display */}
+  <div className={`flex items-center mb-3 p-2 rounded-md ${isUrgent ? "bg-red-50" : "bg-blue-50"}`}>
+    <svg
+      className={`w-4 h-4 mr-2 ${isUrgent ? "text-red-500" : "text-blue-500"}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <div>
+      <p className="text-xs font-medium text-gray-700">Deadline</p>
+      <p className={`text-xs ${isUrgent ? "text-red-600 font-semibold" : "text-blue-600"}`}>
+        {formattedDeadline} {isUrgent && `(${daysRemaining} days left)`}
+      </p>
+    </div>
+  </div>
+
+  <div className="flex gap-2">
+    <button
+      onClick={() => handleEditCommodity(product)}
+      className="w-1/2 bg-gradient-to-r from-gray-600 to-gray-900 text-white px-3 py-2 rounded-lg hover:from-gray-900 hover:to-gray-600 transition duration-300 flex items-center justify-center gap-1 font-medium shadow-sm"
+    >
+      <svg 
+        className="w-4 h-4" 
+        fill="none" 
+        stroke="currentColor" 
+        viewBox="0 0 24 24"
+      >
+        <path 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth="2" 
+          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
+        />
+      </svg>
+      Edit
+    </button>
+    <button
+      onClick={() => setDeleteConfirmation({ visible: true, product })}
+      className="w-1/2 bg-gradient-to-r from-red-600 to-red-900 text-white px-3 py-2 rounded-lg hover:from-red-900 hover:to-red-600 transition duration-300 flex items-center justify-center gap-1 font-medium shadow-sm"
+    >
+      <svg 
+        className="w-4 h-4" 
+        fill="none" 
+        stroke="currentColor" 
+        viewBox="0 0 24 24"
+      >
+        <path 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth="2" 
+          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+        />
+      </svg>
+      Delete
+    </button>
+  </div>
+</div>
+
                 </motion.div>
               );
             })}
@@ -339,6 +388,7 @@ const ViewProducts = () => {
                 </button>
               </div>
               <form onSubmit={handleUpdateCommodity} className="space-y-6">
+                {/* Form fields for commodity details */}
                 <div className="grid grid-cols-1 gap-6">
                   {/* Commodity Name */}
                   <div>
@@ -526,6 +576,64 @@ const ViewProducts = () => {
           onClose={() => setPopup({ ...popup, visible: false })}
         />
       )}
+
+      {/* Delete Confirmation Popup */}
+      <AnimatePresence>
+        {deleteConfirmation.visible && deleteConfirmation.product && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="bg-white rounded-lg p-6 w-96 shadow-lg border border-red-500"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-red-600">Confirm Delete</h3>
+                <button onClick={() => setDeleteConfirmation({ visible: false, product: null })}>
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="mb-4 text-sm text-gray-700">
+                <p>
+                  <strong>Commodity Name:</strong> {deleteConfirmation.product.name}
+                </p>
+                <p>
+                  <strong>Description:</strong> {deleteConfirmation.product.description}
+                </p>
+                <p>
+                  <strong>Quantity:</strong> {deleteConfirmation.product.quantity}
+                </p>
+                <p>
+                  <strong>Deadline:</strong> {new Date(deleteConfirmation.product.deadline).toLocaleDateString()}
+                </p>
+                {/* You can show additional details if needed */}
+              </div>
+              <p className="mb-4 text-red-600">Are you sure you want to delete this commodity?</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() =>
+                    handleDeleteCommodity(deleteConfirmation.product._id)
+                  }
+                  className="w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition duration-200"
+                >
+                  Yes, Delete
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmation({ visible: false, product: null })}
+                  className="w-full bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400 transition duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
