@@ -130,10 +130,10 @@ Your bid has been approved.`;
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-1">
-              View Products
+              View Commodity
             </h2>
             <p className="text-gray-500">
-              Manage your product listings and view bids
+              Manage your Commodity Listings and view bids
             </p>
           </div>
           <div className="flex items-center gap-2">
