@@ -16,7 +16,7 @@ const ViewProducts = () => {
   const [bidsError, setBidsError] = useState("");
   const [modalProductName, setModalProductName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [productQuantity, setProductQuantity] = useState(0);      
   // New state for sorting order on Price
   const [priceSortOrder, setPriceSortOrder] = useState("asc");
 
@@ -28,6 +28,7 @@ const ViewProducts = () => {
         const res = await axios.get(`/api/admin/products?page=${page}&limit=${itemsPerPage}`, {
           headers: { "x-auth-token": token },
         });
+        console.log(res.data)
         setProducts(res.data.products);
         setTotalPages(res.data.totalPages);
         setError("");
@@ -40,20 +41,28 @@ const ViewProducts = () => {
     };
     fetchProducts();
   }, [page, itemsPerPage]);
-
   const fetchBids = async (productId) => {
     try {
       setBidsLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/products/${productId}/bids`, {
+  
+      // Fetch bids for the product
+      const bidsResponse = await axios.get(`/api/admin/products/${productId}/bids`, {
         headers: { "x-auth-token": token },
       });
-      setBids(res.data);
-      console.log(res.data);
+  
+      // Fetch product details to get the current quantity
+      const productResponse = await axios.get(`/api/admin/products/${productId}`, {
+        headers: { "x-auth-token": token },
+      });
+  
+      // Update state
+      setBids(bidsResponse.data);
+      setProductQuantity(productResponse.data.quantity); // Update product quantity
       setBidsError("");
       setSelectedProduct(productId);
     } catch (err) {
-      console.error("Error fetching bids", err);
+      console.error("Error fetching bids or product details", err);
       setBidsError("Error fetching bids. Please try again.");
     } finally {
       setBidsLoading(false);
@@ -75,24 +84,73 @@ const ViewProducts = () => {
     setItemsPerPage(parseInt(e.target.value));
     setPage(1); // Reset to page 1 when items per page changes
   };
+  // const handleSendEmail = async (bid) => {
+  //   // Validate that there is a recipient email address
+  //   if (!bid.email) {
+  //     alert("No recipient email found for this bid.");
+  //     return;
+  //   }
+    
+  //   try {
+  //     const token = localStorage.getItem("adminToken");
+  //     // Construct the email body with bid details and approval message
+  //     const emailBody = `Bid Details:
+  // Email: ${bid.email}
+  // Phone: ${bid.phone}
+  // Price: $${bid.price}
+  
+  // Your bid has been approved.`;
+      
+  //     const response = await axios.post(
+  //       "/api/email/send-email",
+  //       {
+  //         to: bid.email,
+  //         subject: `Bid Approved for ${modalProductName}`,
+  //         text: emailBody,
+  //       },
+  //       { headers: { "x-auth-token": token } }
+  //     );
+  //     alert(response.data.message);
+  //   } catch (error) {
+  //     console.error("Error sending email", error);
+  //     alert("Failed to send email");
+  //   }
+  // };
+  
+  
+
+  // Only include verified bids
+ 
   const handleSendEmail = async (bid) => {
     // Validate that there is a recipient email address
     if (!bid.email) {
       alert("No recipient email found for this bid.");
       return;
     }
-    
+  
     try {
       const token = localStorage.getItem("adminToken");
-      // Construct the email body with bid details and approval message
+  
+      // Call the backend to approve the bid and reduce the product quantity
+      const response = await axios.post(
+        "/api/admin/approve-bid",
+        {
+          bidId: bid._id,
+          productId: selectedProduct,
+        },
+        { headers: { "x-auth-token": token } }
+      );
+
+  
+      // If the bid is approved, send the email
       const emailBody = `Bid Details:
   Email: ${bid.email}
   Phone: ${bid.phone}
   Price: $${bid.price}
   
   Your bid has been approved.`;
-      
-      const response = await axios.post(
+  
+      const emailResponse = await axios.post(
         "/api/email/send-email",
         {
           to: bid.email,
@@ -101,16 +159,17 @@ const ViewProducts = () => {
         },
         { headers: { "x-auth-token": token } }
       );
-      alert(response.data.message);
+  
+      alert(emailResponse.data.message);
+  
+      // Refresh the bids list to reflect the updated status and quantity
+      await fetchBids(selectedProduct);
     } catch (error) {
       console.error("Error sending email", error);
       alert("Failed to send email");
     }
   };
-  
-  
-
-  // Only include verified bids
+ 
   const verifiedBids = bids.filter(bid => bid.isVerified);
 
   // Create a sorted version of the bids based on the current sort order
@@ -236,6 +295,10 @@ const ViewProducts = () => {
                 <div>
                   <h3 className="text-xl font-semibold text-gray-800">Bids for {modalProductName}</h3>
                   <p className="text-sm text-gray-500 mt-1">View and manage bids for this product</p>
+                  <p className="text-sm text-gray-500 mt-1">
+  Quantity Remaining For {modalProductName} is {productQuantity}
+</p>
+
                 </div>
                 <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg transition duration-200">
                   <X className="w-5 h-5 text-gray-500" />
@@ -293,26 +356,38 @@ const ViewProducts = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-  {sortedBids.map((bid) => (
-    <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
-      <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.quantity}</td>
-      <td className="px-6 py-4 text-sm text-gray-800">
-        {new Date(bid.createdAt).toLocaleDateString()}
-      </td>
-      <td className="px-6 py-4 text-sm text-gray-800">{bid.company}</td>
-      <td className="px-6 py-4">
-        <button
-          onClick={() => handleSendEmail(bid)}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200"
-        >
-          Send Email
-        </button>
-      </td>
-    </tr>
-  ))}
+  {sortedBids.map((bid) => {
+    const isProductOutOfStock = productQuantity <= 0;
+    const isBidApproved = bid.status === "Approved";
+
+    return (
+      <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
+        <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
+        <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
+        <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
+        <td className="px-6 py-4 text-sm text-gray-800">{bid.quantity}</td>
+        <td className="px-6 py-4 text-sm text-gray-800">
+          {new Date(bid.createdAt).toLocaleDateString()}
+        </td>
+        <td className="px-6 py-4 text-sm text-gray-800">{bid.company}</td>
+        <td className="px-6 py-4">
+          {isBidApproved ? (
+            <span className="text-green-600">Approved</span>
+          ) : (
+            <button
+              onClick={() => handleSendEmail(bid)}
+              disabled={isProductOutOfStock}
+              className={`bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200 ${
+                isProductOutOfStock ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              Send Email
+            </button>
+          )}
+        </td>
+      </tr>
+    );
+  })}
 </tbody>
 
       </table>

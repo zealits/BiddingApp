@@ -4,6 +4,42 @@ const Product = require("../models/Product");
 const Bid = require("../models/Bid");
 const jwt = require("jsonwebtoken");
 
+// backend/controllers/adminController.js
+
+exports.approveBid = async (req, res) => {
+  const { bidId, productId } = req.body;
+
+  try {
+    // Find the bid and product
+    const bid = await Bid.findById(bidId);
+    const product = await Product.findById(productId);
+
+    if (!bid || !product) {
+      return res.status(404).json({ msg: "Bid or Product not found" });
+    }
+
+    // Check if the product quantity is sufficient
+    if (product.quantity < bid.quantity) {
+      return res.status(400).json({ msg: "Insufficient product quantity" });
+    }
+
+    // Reduce the product quantity
+    product.quantity -= bid.quantity;
+    await product.save();
+
+    // Update the bid status to "Approved"
+    bid.status = "Approved";
+    await bid.save();
+
+    // Send the email (you can use your existing email sending logic here)
+    // ...
+
+    res.json({ msg: "Bid approved and product quantity updated", product, bid });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
 // Optional: Register a new admin (for initial setup)
 exports.registerAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -109,7 +145,7 @@ exports.getProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 6;
     const skip = (page - 1) * limit;
 
-    const products = await Product.find({}, "name description images").skip(skip).limit(limit);
+    const products = await Product.find({}, "name description quantity images deadline").sort({ createdAt: -1 }).skip(skip).limit(limit);
 
     const totalProducts = await Product.countDocuments();
     res.json({ products, totalPages: Math.ceil(totalProducts / limit) });
@@ -120,11 +156,27 @@ exports.getProducts = async (req, res) => {
 };
 
 // Backend: Fetch bids for a specific product
+// backend/controllers/adminController.js
 exports.getProductBids = async (req, res) => {
   try {
     const productId = req.params.id;
-    const bids = await Bid.find({ product: productId }, "email phone price company quantity isVerified status createdAt").sort({ createdAt: -1 });
+    const bids = await Bid.find({ product: productId }).sort({ createdAt: -1 });
     res.json(bids);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+// Fetch a single product by ID
+exports.getProductById = async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ msg: "Product not found" });
+    }
+    res.json(product);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");

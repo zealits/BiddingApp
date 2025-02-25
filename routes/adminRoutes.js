@@ -15,6 +15,7 @@ router.post('/register', adminController.registerAdmin);
 
 // Register a product with multiple image uploads (protected route)
 router.post('/product', auth, upload.array('images', 10), adminController.registerProduct);
+router.post('/approve-bid', auth, adminController.approveBid);
 
 // View all bids route with pagination
 // router.get('/bids', auth, adminController.getAllBids);
@@ -24,7 +25,11 @@ router.post('/product', auth, upload.array('images', 10), adminController.regist
 router.get('/products', auth, adminController.getProducts);
 
 // Fetch bids for a specific product
-router.get('/products/:id/bids', auth, adminController.getProductBids);
+router.get("/products/:id/bids",auth, adminController.getProductBids);
+
+// Fetch a single product by ID (protected route)
+router.get('/products/:id', auth, adminController.getProductById);
+
 
 
 module.exports = router;
