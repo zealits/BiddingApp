@@ -10,6 +10,7 @@ import {
   AlertCircle,
   ChevronUp,
   ChevronDown,
+  Search
 } from "lucide-react";
 import PopupModal from "../../models/PopupModal"; // Updated: Import the PopupModal component
 
@@ -28,14 +29,15 @@ const ViewProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [priceSortOrder, setPriceSortOrder] = useState("asc");
   const [popup, setPopup] = useState({ visible: false, message: "", type: "info" });
-
+  const [searchQuery, setSearchQuery] = useState("");
+ 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("adminToken");
         const res = await axios.get(
-          `/api/admin/products?page=${page}&limit=${itemsPerPage}`,
+          `/api/admin/products?page=${page}&limit=${itemsPerPage}&search=${searchQuery}`,
           {
             headers: { "x-auth-token": token },
           }
@@ -51,8 +53,12 @@ const ViewProducts = () => {
       }
     };
     fetchProducts();
-  }, [page, itemsPerPage]);
+  }, [page, itemsPerPage, searchQuery]);
 
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to the first page when searching
+  };
   const fetchBids = async (productId) => {
     try {
       setBidsLoading(true);
@@ -126,33 +132,43 @@ Your bid has been approved.`;
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="bg-white rounded-xl p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-1">
-              View Commodity
-            </h2>
-            <p className="text-gray-500">
-              Manage your Commodity Listings and view bids
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-gray-700 font-medium">
-              Products per page:
-            </label>
-            <select
-              value={itemsPerPage}
-              onChange={handleItemsPerPageChange}
-              className="border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
-            >
-              <option value={3}>3</option>
-              <option value={6}>6</option>
-              <option value={12}>12</option>
-              <option value={18}>18</option>
-              <option value={24}>24</option>
-            </select>
-          </div>
+    <div className="bg-white rounded-xl p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-1">
+            View Commodity
+          </h2>
+          <p className="text-gray-500">
+            Manage your Commodity Listings and view bids
+          </p>
         </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="border border-gray-300 rounded-md p-2 pl-10 focus:ring focus:ring-blue-200"
+            />
+            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+          </div>
+          <label className="text-gray-700 font-medium">
+            Products per page:
+          </label>
+          <select
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+            className="border border-gray-300 rounded-md p-2 focus:ring focus:ring-blue-200"
+          >
+            <option value={3}>3</option>
+            <option value={6}>6</option>
+            <option value={12}>12</option>
+            <option value={18}>18</option>
+            <option value={24}>24</option>
+          </select>
+        </div>
+      </div>
 
         {loading && (
           <div className="flex items-center justify-center py-12">
