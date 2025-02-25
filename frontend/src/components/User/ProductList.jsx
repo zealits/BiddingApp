@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import ImageCarousel from "./ImageCarousel";
 import { ChevronLeft, ChevronRight, Package, Timer, ArrowRight } from "lucide-react";
-
+import axios from "axios";
 // Helper function to calculate time left until deadline
 const calculateTimeLeft = (deadline) => {
   const total = new Date(deadline) - new Date();
@@ -26,7 +25,7 @@ const Countdown = ({ deadline }) => {
   }, [deadline]);
 
   if (timeLeft.total <= 0) {
-    return <span className="text-sm font-medium">Ended</span>;
+    return <span className="text-sm font-medium text-red-500">Ended</span>;
   }
 
   let display;
@@ -40,9 +39,109 @@ const Countdown = ({ deadline }) => {
     display = "Less than a minute left";
   }
 
-  return <span className="text-sm font-medium">{display}</span>;
+  return <span className="text-sm font-medium text-gray-700">{display}</span>;
 };
 
+// ProductCard component to handle individual product rendering
+const ProductCard = ({ product }) => {
+  const isExpired = new Date(product.deadline) <= new Date();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const descriptionRef = useRef(null);
+
+  // Function to toggle the expanded state
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  // Function to handle clicks outside the description
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (descriptionRef.current && !descriptionRef.current.contains(event.target)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col group transform hover:-translate-y-2">
+      {product.images && product.images.length > 0 && (
+        <div className="relative w-full aspect-[4/3]">
+          <ImageCarousel images={product.images} alt={product.name} />
+        </div>
+      )}
+
+      <div className="p-6 flex flex-col flex-grow">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 group-hover:text-gray-600 transition-colors">
+              {product.name}
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">Quantity: {product.quantity}</p>
+          </div>
+          <div className="flex items-center gap-1 text-gray-700">
+            <Timer className="w-4 h-4" />
+            <Countdown deadline={product.deadline} />
+          </div>
+        </div>
+
+        <div ref={descriptionRef}>
+          <p className={`text-gray-600 mb-6 ${isExpanded ? "" : "line-clamp-3"}`}>
+            {product.description}
+          </p>
+          {product.description.length > 100 && (
+            <button
+              onClick={toggleExpand}
+              className="text-blue-500 hover:text-blue-700 focus:outline-none font-medium"
+            >
+              {isExpanded ? "Show Less" : "Show More"}
+            </button>
+          )}
+        </div>
+
+        {product.specifications && product.specifications.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-semibold text-gray-900 mb-3">Specifications</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {product.specifications.map((spec, index) => (
+                <div key={index} className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="text-xs text-gray-500">{spec.key}</div>
+                  <div className="text-sm font-medium text-gray-900">{spec.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Conditionally render "Place Bid" if deadline is not passed */}
+        {!isExpired ? (
+          <Link
+            to={`/user/bid/${product._id}`}
+            className="mt-auto flex items-center justify-center gap-2 bg-gradient-to-r from-gray-700 to-gray-800 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 hover:bg-black hover:shadow-lg group"
+          >
+            Place Bid
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        ) : (
+          <button
+            disabled
+            className="mt-auto flex items-center justify-center gap-2 bg-gray-300 text-white py-3 px-6 rounded-xl font-semibold cursor-not-allowed"
+          >
+            Bid Ended
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Main ProductList component remains the same
+
+// Main ProductList component
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +177,7 @@ const ProductList = () => {
 
         {loading ? (
           <div className="flex justify-center items-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-e-gray-900"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
@@ -89,74 +188,9 @@ const ProductList = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => {
-              // Check if bid deadline is over
-              const isExpired = new Date(product.deadline) <= new Date();
-              const formattedDeadline = new Date(product.deadline).toLocaleDateString();
-              const timeLeft = calculateTimeLeft(product.deadline);
-              return (
-                <div
-                  key={product._id}
-                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
-                >
-                  {product.images && product.images.length > 0 && (
-                    <div className="relative w-full aspect-[4/3]">
-                      <ImageCarousel images={product.images} alt={product.name} />
-                    </div>
-                  )}
-
-                  <div className="p-6 flex flex-col flex-grow">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900 group-hover:text-gray-600 transition-colors">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">Quantity: {product.quantity}</p>
-                      </div>
-                      <div className="flex items-center gap-1 text-black">
-                        <Timer className="w-4 h-4" />
-                        {/* Use the deadline property from the database */}
-                        <Countdown deadline={product.deadline} />
-                      </div>
-                    </div>
-
-                    <p className="text-gray-600 mb-6 line-clamp-3">{product.description}</p>
-
-                    {product.specifications && product.specifications.length > 0 && (
-                      <div className="mb-6">
-                        <h4 className="text-sm font-medium text-gray-900 mb-3">Specifications</h4>
-                        <div className="grid grid-cols-2 gap-2">
-                          {product.specifications.map((spec, index) => (
-                            <div key={index} className="bg-gray-50 p-2 rounded-lg">
-                              <div className="text-xs text-gray-500">{spec.key}</div>
-                              <div className="text-sm font-medium text-gray-900">{spec.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Conditionally render "Place Bid" if deadline is not passed */}
-                    {!isExpired ? (
-                      <Link
-                        to={`/user/bid/${product._id}`}
-                        className="mt-auto flex items-center justify-center gap-2 bg-gray-900 text-white py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:bg-black hover:shadow-md group"
-                      >
-                        Place Bid
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </Link>
-                    ) : (
-                      <button
-                        disabled
-                        className="mt-auto flex items-center justify-center gap-2 bg-gray-300 text-white py-3 px-6 rounded-xl font-medium cursor-not-allowed"
-                      >
-                        Bid Ended
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {products.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
           </div>
         )}
 
