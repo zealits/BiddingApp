@@ -15,7 +15,7 @@ exports.sendEmailController = async (req, res) => {
     }
 
     // Append a bid approved message to the text.
-    const emailBody = `${text}\n\nYour bid has been approved.`;
+    const emailBody = `${text}\n`;
 
     // Call sendEmail with an options object.
     await sendmail({ to, subject, text: emailBody });

@@ -171,7 +171,6 @@ const ViewProducts = () => {
         headers: { "x-auth-token": token },
       });
   
-      setPopup({ visible: true, message: "Commodity deleted successfully", type: "success" });
       // Refetch products after deletion
       const res = await axios.get(
         `/api/admin/products?page=${page}&limit=${itemsPerPage}`,
@@ -179,6 +178,7 @@ const ViewProducts = () => {
       );
       setProducts(res.data.products);
       setDeleteConfirmation({ visible: false, product: null });
+      setPopup({ visible: true, message: "Commodity deleted successfully", type: "success" });
     } catch (err) {
       console.error("Error deleting commodity", err);
       setPopup({ visible: true, message: "Error deleting commodity", type: "error" });

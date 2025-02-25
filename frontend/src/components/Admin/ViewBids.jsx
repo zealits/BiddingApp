@@ -1,3 +1,4 @@
+// ViewProducts.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +12,7 @@ import {
   ChevronDown,
   Search,
 } from "lucide-react";
+import PopupModal from "../../models/PopupModal"; // <-- Import your PopupModal
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
@@ -28,6 +30,13 @@ const ViewProducts = () => {
   const [productQuantity, setProductQuantity] = useState(0);
   const [priceSortOrder, setPriceSortOrder] = useState("asc");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // New state to handle popup notifications (success/error)
+  const [popup, setPopup] = useState({
+    show: false,
+    message: "",
+    type: "success", // "success" or "error"
+  });
 
   // Fetch products with pagination and search
   useEffect(() => {
@@ -110,9 +119,14 @@ const ViewProducts = () => {
     setPage(1);
   };
 
+  // Modified handleSendEmail function using PopupModal instead of alert
   const handleSendEmail = async (bid) => {
     if (!bid.email) {
-      alert("No recipient email found for this bid.");
+      setPopup({
+        show: true,
+        message: "No recipient email found for this bid.",
+        type: "error",
+      });
       return;
     }
 
@@ -132,8 +146,9 @@ const ViewProducts = () => {
 Email: ${bid.email}
 Phone: ${bid.phone}
 Price: $${bid.price}
+Quantity: ${bid.quantity}
 
-Your bid has been approved.`;
+Your bid has been approved for ${modalProductName}.`;
 
       const emailResponse = await axios.post(
         "/api/email/send-email",
@@ -145,13 +160,27 @@ Your bid has been approved.`;
         { headers: { "x-auth-token": token } }
       );
 
-      alert(emailResponse.data.message);
+      // Instead of alert, show the success popup with bid details
+      setPopup({
+        show: true,
+        message: `Confirmation email has been sent to ${bid.email} for ${modalProductName}.\n
+Price: $${bid.price}\n
+Quantity: ${bid.quantity}`,
+        type: "success",
+      });
 
       // Refresh the bids list to reflect updated status and quantity
       await fetchBids(selectedProduct);
     } catch (error) {
       console.error("Error sending email", error);
-      alert("Failed to send email");
+      // Show error popup with the error message
+      setPopup({
+        show: true,
+        message: `Failed to send email: ${
+          error.response ? error.response.data.message : error.message
+        }`,
+        type: "error",
+      });
     }
   };
 
@@ -164,6 +193,7 @@ Your bid has been approved.`;
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-xl p-6">
+        {/* Header & Search */}
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-1">
@@ -201,6 +231,7 @@ Your bid has been approved.`;
           </div>
         </div>
 
+        {/* Loading and error handling */}
         {loading && (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
@@ -214,6 +245,7 @@ Your bid has been approved.`;
           </div>
         )}
 
+        {/* Products grid */}
         {!loading && products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
@@ -254,6 +286,7 @@ Your bid has been approved.`;
           </div>
         )}
 
+        {/* Pagination */}
         <div className="flex items-center justify-between mt-8 px-4">
           <button
             disabled={page === 1}
@@ -277,6 +310,7 @@ Your bid has been approved.`;
         </div>
       </div>
 
+      {/* Bids Modal */}
       <AnimatePresence>
         {isModalOpen && selectedProduct && (
           <motion.div
@@ -302,7 +336,8 @@ Your bid has been approved.`;
                     View and manage bids for this product
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Quantity Remaining For {modalProductName} is {productQuantity}
+                    Quantity Remaining For {modalProductName} is{" "}
+                    {productQuantity}
                   </p>
                 </div>
                 <button
@@ -435,6 +470,15 @@ Your bid has been approved.`;
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Render the PopupModal when popup.show is true */}
+      {popup.show && (
+        <PopupModal
+          message={popup.message}
+          type={popup.type}
+          onClose={() => setPopup({ ...popup, show: false })}
+        />
+      )}
     </div>
   );
 };
