@@ -377,7 +377,7 @@ const ViewProducts = () => {
             <button
               onClick={() => handleSendEmail(bid)}
               disabled={isProductOutOfStock}
-              className={`bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded transition duration-200 ${
+              className={`bg-gray-900 hover:bg-black text-white text-sm px-4 py-2 rounded transition duration-200 ${
                 isProductOutOfStock ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
