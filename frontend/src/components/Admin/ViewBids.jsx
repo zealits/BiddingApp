@@ -1,4 +1,3 @@
-// ViewProducts.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -150,7 +149,7 @@ Quantity: ${bid.quantity}
 
 Your bid has been approved for ${modalProductName}.`;
 
-      const emailResponse = await axios.post(
+      await axios.post(
         "/api/email/send-email",
         {
           to: bid.email,
@@ -160,12 +159,9 @@ Your bid has been approved for ${modalProductName}.`;
         { headers: { "x-auth-token": token } }
       );
 
-      // Instead of alert, show the success popup with bid details
       setPopup({
         show: true,
-        message: `Confirmation email has been sent to ${bid.email} for ${modalProductName}.\n
-Price: $${bid.price}\n
-Quantity: ${bid.quantity}`,
+        message: `Confirmation email has been sent to ${bid.email} for ${modalProductName}.\nPrice: $${bid.price}\nQuantity: ${bid.quantity}`,
         type: "success",
       });
 
@@ -173,7 +169,6 @@ Quantity: ${bid.quantity}`,
       await fetchBids(selectedProduct);
     } catch (error) {
       console.error("Error sending email", error);
-      // Show error popup with the error message
       setPopup({
         show: true,
         message: `Failed to send email: ${
@@ -184,8 +179,8 @@ Quantity: ${bid.quantity}`,
     }
   };
 
+  // Compute verified and sorted bids
   const verifiedBids = bids.filter((bid) => bid.isVerified);
-
   const sortedBids = [...verifiedBids].sort((a, b) =>
     priceSortOrder === "asc" ? a.price - b.price : b.price - a.price
   );
@@ -257,11 +252,7 @@ Quantity: ${bid.quantity}`,
               >
                 <div className="relative h-48">
                   <img
-                    src={
-                      product.images[0]
-                        ? `data:${product.images[0].contentType};base64,${product.images[0].data}`
-                        : ""
-                    }
+                    src={product.images[0] ? product.images[0].url : ""}
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />
@@ -336,8 +327,7 @@ Quantity: ${bid.quantity}`,
                     View and manage bids for this product
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Quantity Remaining For {modalProductName} is{" "}
-                    {productQuantity}
+                    Quantity Remaining For {modalProductName} is {productQuantity}
                   </p>
                 </div>
                 <button

@@ -10,7 +10,7 @@ const RegisterProduct = () => {
   const [images, setImages] = useState([]);
   const [specifications, setSpecifications] = useState([{ key: "", value: "" }]);
   
-  // New state for popup
+  // Popup state for success/error messages
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupMessage, setPopupMessage] = useState("");
   const [popupType, setPopupType] = useState(""); // "success" or "error"
@@ -64,6 +64,7 @@ const RegisterProduct = () => {
         formData.append("images", file);
       });
 
+      // The backend is configured to upload images to Cloudinary.
       await axios.post("/api/admin/product", formData, {
         headers: {
           "x-auth-token": token,
@@ -74,7 +75,7 @@ const RegisterProduct = () => {
       setPopupMessage("Commodity registered successfully");
       setPopupType("success");
       
-      // Reset the form
+      // Reset the form fields after successful registration
       setName("");
       setDescription("");
       setQuantity(1);
@@ -82,6 +83,7 @@ const RegisterProduct = () => {
       setImages([]);
       setSpecifications([{ key: "", value: "" }]);
     } catch (err) {
+      console.error("Error registering commodity", err);
       setPopupMessage("Error registering commodity");
       setPopupType("error");
     } finally {
@@ -275,48 +277,47 @@ const RegisterProduct = () => {
         </form>
       </div>
 
-      {/* Closaable Popup */}
+      {/* Closable Popup */}
       {popupVisible && (
-  <div className="fixed inset-0 z-10 flex items-center justify-center">
-    {/* Background Overlay */}
-    <div className="absolute inset-0  bg-opacity-60 backdrop-blur-sm pointer-events-none"></div>
+        <div className="fixed inset-0 z-10 flex items-center justify-center">
+          {/* Background Overlay */}
+          <div className="absolute inset-0 bg-opacity-60 backdrop-blur-sm pointer-events-none"></div>
 
-    {/* Popup Content */}
-    <div
-      className={`relative bg-white rounded-2xl p-6 w-96 shadow-2xl border ${
-        popupType === "success" ? "border-black" : "border-black"
-      }`}
-    >
-      <div className="flex justify-between items-center mb-4">
-        <h3
-          className={`text-2xl font-semibold ${
-            popupType === "success" ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {popupType === "success"
-            ? "Commodity Registered"
-            : "Registration Error"}
-        </h3>
-        <button
-          onClick={closePopup}
-          className="text-gray-500 hover:text-gray-700 transition duration-200"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      </div>
-      <p className="text-base text-gray-600">{popupMessage}</p>
-      <div className="mt-6">
-        <button
-          onClick={closePopup}
-          className="w-full bg-black text-white py-3 rounded-lg hover:bg-green-500 transition duration-200"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+          {/* Popup Content */}
+          <div
+            className={`relative bg-white rounded-2xl p-6 w-96 shadow-2xl border ${
+              popupType === "success" ? "border-black" : "border-black"
+            }`}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3
+                className={`text-2xl font-semibold ${
+                  popupType === "success" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {popupType === "success"
+                  ? "Commodity Registered"
+                  : "Registration Error"}
+              </h3>
+              <button
+                onClick={closePopup}
+                className="text-gray-500 hover:text-gray-700 transition duration-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <p className="text-base text-gray-600">{popupMessage}</p>
+            <div className="mt-6">
+              <button
+                onClick={closePopup}
+                className="w-full bg-black text-white py-3 rounded-lg hover:bg-green-500 transition duration-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

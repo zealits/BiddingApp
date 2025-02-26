@@ -270,18 +270,12 @@ const ViewProducts = () => {
                 >
                   <div className="relative h-40">
                     <img
-                      src={
-                        product.images && product.images[0]
-                          ? `data:${product.images[0].contentType};base64,${product.images[0].data}`
-                          : ""
-                      }
+                      src={product.images && product.images[0] ? product.images[0].url : ""}
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
                     {/* Status badge */}
-                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${
-                      isUrgent ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"
-                    }`}>
+                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${isUrgent ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>
                       {isUrgent ? "Urgent" : "Active"}
                     </div>
                   </div>
