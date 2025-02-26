@@ -1,11 +1,10 @@
-// backend/controllers/adminController.js
+// controllers/adminController.js
 const Admin = require("../models/Admin");
 const Product = require("../models/Product");
 const Bid = require("../models/Bid");
 const jwt = require("jsonwebtoken");
 
-// backend/controllers/adminController.js
-
+// Approve a bid and update product quantity
 exports.approveBid = async (req, res) => {
   const { bidId, productId } = req.body;
 
@@ -31,16 +30,15 @@ exports.approveBid = async (req, res) => {
     bid.status = "Approved";
     await bid.save();
 
-    // Send the email (you can use your existing email sending logic here)
-    // ...
-
+    // Optionally: Trigger email notification
     res.json({ msg: "Bid approved and product quantity updated", product, bid });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
   }
 };
-// Optional: Register a new admin (for initial setup)
+
+// Register a new admin (for initial setup)
 exports.registerAdmin = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -81,10 +79,8 @@ exports.loginAdmin = async (req, res) => {
 };
 
 // Register a new product for bidding (admin-protected)
-// backend/controllers/adminController.js
-
 exports.registerProduct = async (req, res) => {
-  const { name, description, specifications, quantity, deadline } = req.body; // Include deadline in destructuring
+  const { name, description, specifications, quantity, deadline } = req.body;
   console.log(req.body);
 
   try {
@@ -94,7 +90,7 @@ exports.registerProduct = async (req, res) => {
       try {
         parsedSpecifications = JSON.parse(specifications);
         if (!Array.isArray(parsedSpecifications)) {
-          parsedSpecifications = []; // Ensure it's an array
+          parsedSpecifications = [];
         }
       } catch (error) {
         console.error("Invalid JSON format for specifications:", error);
@@ -107,7 +103,7 @@ exports.registerProduct = async (req, res) => {
     // Convert quantity to a number (default to 1 if not provided)
     const productQuantity = Number(quantity) || 1;
 
-    // Validate deadline (ensure it's a valid date)
+    // Validate deadline
     const productDeadline = deadline ? new Date(deadline) : null;
     if (productDeadline && isNaN(productDeadline.getTime())) {
       return res.status(400).json({ msg: "Invalid deadline format" });
@@ -116,16 +112,16 @@ exports.registerProduct = async (req, res) => {
     const newProduct = new Product({
       name,
       description,
-      quantity: productQuantity, // Add the quantity field
+      quantity: productQuantity,
       specifications: parsedSpecifications,
-      deadline: productDeadline, // Add the deadline field
+      deadline: productDeadline,
     });
 
-    // If images were uploaded, process each file and store in the images array
+    // If images were uploaded via Cloudinary, store the URL and public_id
     if (req.files && req.files.length > 0) {
       newProduct.images = req.files.map((file) => ({
-        data: file.buffer.toString("base64"),
-        contentType: file.mimetype,
+        url: file.path,       // Cloudinary URL
+        public_id: file.filename // Cloudinary public ID
       }));
     }
 
@@ -140,16 +136,16 @@ exports.registerProduct = async (req, res) => {
 // Update an existing product (admin-protected)
 exports.updateProduct = async (req, res) => {
   const { name, description, specifications, quantity, deadline } = req.body;
-  const productId = req.params.id; // Retrieve product ID from URL
+  const productId = req.params.id;
 
   try {
-    // Parse specifications if it's a JSON string
+    // Parse specifications if provided as JSON string
     let parsedSpecifications = [];
     if (typeof specifications === "string") {
       try {
         parsedSpecifications = JSON.parse(specifications);
         if (!Array.isArray(parsedSpecifications)) {
-          parsedSpecifications = []; // Ensure it's an array
+          parsedSpecifications = [];
         }
       } catch (error) {
         console.error("Invalid JSON format for specifications:", error);
@@ -159,10 +155,10 @@ exports.updateProduct = async (req, res) => {
       parsedSpecifications = Array.isArray(specifications) ? specifications : [];
     }
 
-    // Convert quantity to a number (default to 1 if not provided)
+    // Convert quantity to a number (default to 1)
     const productQuantity = Number(quantity) || 1;
 
-    // Validate deadline (ensure it's a valid date)
+    // Validate deadline
     const productDeadline = deadline ? new Date(deadline) : null;
     if (productDeadline && isNaN(productDeadline.getTime())) {
       return res.status(400).json({ msg: "Invalid deadline format" });
@@ -177,15 +173,15 @@ exports.updateProduct = async (req, res) => {
       deadline: productDeadline,
     };
 
-    // If images were uploaded, process each file and update the images array
+    // If new images were uploaded, update the images array with Cloudinary data
     if (req.files && req.files.length > 0) {
       updateFields.images = req.files.map((file) => ({
-        data: file.buffer.toString("base64"),
-        contentType: file.mimetype,
+        url: file.path,       // Cloudinary URL
+        public_id: file.filename // Cloudinary public ID
       }));
     }
 
-    // Find and update the product by its ID
+    // Find and update the product
     let product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ msg: "Product not found" });
@@ -204,7 +200,6 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-
 // Delete a product (admin-protected)
 exports.deleteProduct = async (req, res) => {
   const productId = req.params.id;
@@ -215,6 +210,9 @@ exports.deleteProduct = async (req, res) => {
       return res.status(404).json({ msg: "Product not found" });
     }
 
+    // Optionally: Remove images from Cloudinary using product.images.public_id
+    // (Call Cloudinary's destroy method here if needed)
+
     await Product.findByIdAndDelete(productId);
     res.json({ msg: "Product deleted successfully" });
   } catch (err) {
@@ -222,23 +220,8 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
-// View all bids for a given product (admin-protected)
-// Backend: Fetch paginated products
-// exports.getProducts = async (req, res) => {
-//   try {
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 6;
-//     const skip = (page - 1) * limit;
 
-//     const products = await Product.find({}, "name description images quantity specifications deadline").sort({ createdAt: -1 }).skip(skip).limit(limit);
-
-//     const totalProducts = await Product.countDocuments();
-//     res.json({ products, totalPages: Math.ceil(totalProducts / limit) });
-//   } catch (err) {
-//     console.error(err.message);
-//     res.status(500).send("Server Error");
-//   }
-// };
+// Get paginated products (admin-protected)
 exports.getProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -263,8 +246,7 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-// Backend: Fetch bids for a specific product
-// backend/controllers/adminController.js
+// Get bids for a specific product (admin-protected)
 exports.getProductBids = async (req, res) => {
   try {
     const productId = req.params.id;
@@ -276,7 +258,7 @@ exports.getProductBids = async (req, res) => {
   }
 };
 
-// Fetch a single product by ID
+// Get a single product by ID (admin-protected)
 exports.getProductById = async (req, res) => {
   try {
     const productId = req.params.id;

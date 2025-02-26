@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const ImageSchema = new mongoose.Schema({
-  data: { type: String, required: true },         // Base64 encoded image data
-  contentType: { type: String, required: true }     // e.g., "image/jpeg"
+  url: { type: String, required: true }, // Cloudinary URL
+  public_id: { type: String, required: true } // Public ID for managing images in Cloudinary
 });
 
 const SpecificationSchema = new mongoose.Schema({

@@ -13,7 +13,14 @@ const ImageCarousel = ({ images, alt }) => {
   // Guard clause for empty images array.
   if (!images || images.length === 0) return null;
 
+  // Get the current image.
+  // If the image is an object with a "url" property, use that.
+  // Otherwise, assume the image is already a URL string.
   const currentImage = images[currentIndex];
+  const imageUrl = currentImage && currentImage.url ? currentImage.url : currentImage;
+
+  // If imageUrl is undefined or empty, avoid rendering the image.
+  if (!imageUrl) return null;
 
   const handlePrev = () => {
     setCurrentIndex((prevIndex) =>
@@ -32,11 +39,9 @@ const ImageCarousel = ({ images, alt }) => {
       <div className="w-full h-70 overflow-hidden rounded">
         <img
           key={`carousel-image-${currentIndex}`} // Force remount on index change
-          src={`data:${currentImage.contentType};base64,${currentImage.data}`}
+          src={imageUrl}
           alt={`${alt} - ${currentIndex + 1}`}
-          
-          className={`w-full h-full object-cover transition-opacity duration-300
-          }`}
+          className="w-full h-full object-cover transition-opacity duration-300"
           onLoad={() => setLoaded(true)}
         />
       </div>
@@ -64,10 +69,13 @@ const ImageCarousel = ({ images, alt }) => {
 
 ImageCarousel.propTypes = {
   images: PropTypes.arrayOf(
-    PropTypes.shape({
-      contentType: PropTypes.string.isRequired,
-      data: PropTypes.string.isRequired,
-    })
+    PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.shape({
+        url: PropTypes.string.isRequired, // Cloudinary URL
+        public_id: PropTypes.string, // Optional Cloudinary public ID
+      }),
+    ])
   ).isRequired,
   alt: PropTypes.string.isRequired,
 };

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ImageCarousel from "./ImageCarousel";
 import { ChevronLeft, ChevronRight, Package, Timer, ArrowRight } from "lucide-react";
 import axios from "axios";
+
 // Helper function to calculate time left until deadline
 const calculateTimeLeft = (deadline) => {
   const total = new Date(deadline) - new Date();
@@ -71,7 +72,8 @@ const ProductCard = ({ product }) => {
     <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col group transform hover:-translate-y-2">
       {product.images && product.images.length > 0 && (
         <div className="relative w-full aspect-[4/3]">
-          <ImageCarousel images={product.images} alt={product.name} />
+          {/* Map images array to get only the URL for Cloudinary-hosted images */}
+          <ImageCarousel images={product.images.map((img) => img.url)} alt={product.name} />
         </div>
       )}
 
@@ -138,8 +140,6 @@ const ProductCard = ({ product }) => {
     </div>
   );
 };
-
-// Main ProductList component remains the same
 
 // Main ProductList component
 const ProductList = () => {
