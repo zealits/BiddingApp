@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
 import { Plus, Minus, Upload, X } from "lucide-react";
+import PopupModal from '../../models/PopupModal'; // Adjust the path as necessary
 
 const RegisterProduct = () => {
   const [name, setName] = useState("");
@@ -9,12 +10,9 @@ const RegisterProduct = () => {
   const [deadline, setDeadline] = useState("");
   const [images, setImages] = useState([]);
   const [specifications, setSpecifications] = useState([{ key: "", value: "" }]);
-  
-  // Popup state for success/error messages
-  const [popupVisible, setPopupVisible] = useState(false);
-  const [popupMessage, setPopupMessage] = useState("");
-  const [popupType, setPopupType] = useState(""); // "success" or "error"
-  
+  const [popup, setPopup] = useState({ visible: false, message: "", type: "" });
+  const [isRegistering, setIsRegistering] = useState(false);
+
   const fileInputRef = useRef(null);
 
   const handleAddSpecification = () => {
@@ -52,6 +50,8 @@ const RegisterProduct = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setIsRegistering(true);
+
     try {
       const token = localStorage.getItem("adminToken");
       const formData = new FormData();
@@ -64,7 +64,6 @@ const RegisterProduct = () => {
         formData.append("images", file);
       });
 
-      // The backend is configured to upload images to Cloudinary.
       await axios.post("/api/admin/product", formData, {
         headers: {
           "x-auth-token": token,
@@ -72,9 +71,8 @@ const RegisterProduct = () => {
         },
       });
 
-      setPopupMessage("Commodity registered successfully");
-      setPopupType("success");
-      
+      setPopup({ visible: true, message: "Commodity registered successfully", type: "success" });
+
       // Reset the form fields after successful registration
       setName("");
       setDescription("");
@@ -84,17 +82,10 @@ const RegisterProduct = () => {
       setSpecifications([{ key: "", value: "" }]);
     } catch (err) {
       console.error("Error registering commodity", err);
-      setPopupMessage("Error registering commodity");
-      setPopupType("error");
+      setPopup({ visible: true, message: "Error registering commodity", type: "error" });
     } finally {
-      setPopupVisible(true);
+      setIsRegistering(false);
     }
-  };
-
-  const closePopup = () => {
-    setPopupVisible(false);
-    setPopupMessage("");
-    setPopupType("");
   };
 
   return (
@@ -169,7 +160,7 @@ const RegisterProduct = () => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Specifications
+                  Specifications *
                 </label>
                 <button
                   type="button"
@@ -191,6 +182,7 @@ const RegisterProduct = () => {
                       }
                       placeholder="Key (e.g. Weight)"
                       className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                      required
                     />
                     <input
                       type="text"
@@ -200,6 +192,7 @@ const RegisterProduct = () => {
                       }
                       placeholder="Value (e.g. 20kg)"
                       className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                      required
                     />
                     {specifications.length > 1 && (
                       <button
@@ -270,53 +263,21 @@ const RegisterProduct = () => {
             <button
               type="submit"
               className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-black focus:ring-4 focus:ring-blue-200 transition duration-200"
+              disabled={isRegistering}
             >
-              Register Commodity
+              {isRegistering ? "Registering..." : "Register Commodity"}
             </button>
           </div>
         </form>
       </div>
 
-      {/* Closable Popup */}
-      {popupVisible && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center">
-          {/* Background Overlay */}
-          <div className="absolute inset-0 bg-opacity-60 backdrop-blur-sm pointer-events-none"></div>
-
-          {/* Popup Content */}
-          <div
-            className={`relative bg-white rounded-2xl p-6 w-96 shadow-2xl border ${
-              popupType === "success" ? "border-black" : "border-black"
-            }`}
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3
-                className={`text-2xl font-semibold ${
-                  popupType === "success" ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {popupType === "success"
-                  ? "Commodity Registered"
-                  : "Registration Error"}
-              </h3>
-              <button
-                onClick={closePopup}
-                className="text-gray-500 hover:text-gray-700 transition duration-200"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <p className="text-base text-gray-600">{popupMessage}</p>
-            <div className="mt-6">
-              <button
-                onClick={closePopup}
-                className="w-full bg-black text-white py-3 rounded-lg hover:bg-green-500 transition duration-200"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Popup Modal */}
+      {popup.visible && (
+        <PopupModal
+          message={popup.message}
+          type={popup.type}
+          onClose={() => setPopup({ visible: false, message: "", type: "" })}
+        />
       )}
     </div>
   );
