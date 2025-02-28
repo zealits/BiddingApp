@@ -354,7 +354,7 @@ Your bid has been approved for ${modalProductName}.`;
 
                 <div className="container mx-auto px-4">
                   {!bidsLoading && verifiedBids.length > 0 ? (
-                    <div className="overflow-x-auto w-full">
+                    <div className="w-full">
                       <table className="min-w-full w-full table-auto">
                         <thead className="sticky top-0 bg-white shadow-sm">
                           <tr className="bg-gray-50">
