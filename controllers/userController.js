@@ -2,6 +2,7 @@ const Bid = require("../models/Bid");
 const Product = require("../models/Product");
 const generateOTP = require("../utils/otpGenerator");
 const sendEmail = require("../utils/sendEmail");
+const  generateOtpEmailTemplate  = require("../utils/otpEmailTemplate");
 
 // Temporary storage for OTPs (in-memory, replace with Redis or database in production)
 const otpStorage = {};
@@ -22,7 +23,7 @@ exports.submitBid = async (req, res) => {
 
     // Send the OTP to the user's email for bid verification
     const subject = "Your Bid OTP Verification";
-    const html = `<p>Your OTP for bid verification is: <strong>${otp}</strong></p>`;
+    const html = generateOtpEmailTemplate(otp);
 
     const emailOptions = {
       email: email,
