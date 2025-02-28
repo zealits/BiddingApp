@@ -1,6 +1,8 @@
 // backend/controllers/emailController.js
 const EmailVerification = require('../models/EmailVerification');
 const generateOTP = require('../utils/otpGenerator');
+const generateOtpEmailTemplate = require('../utils/otpEmailTemplate');
+
 //const sendEmail = require('../utils/email');
 
 const sendEmail = require("../utils/sendEmail"); // Assuming sendEmail function is in utils
@@ -45,7 +47,8 @@ exports.sendOTP = async (req, res) => {
     
     // Send the OTP to the provided email
     const subject = 'Your Email Verification OTP';
-    const text = `Your OTP for email verification is: ${otp}`;
+    const text = generateOtpEmailTemplate(otp);
+    console.log(text);
     await sendEmail(email, subject, text);
     
     res.json({ msg: 'OTP sent to email' });

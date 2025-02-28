@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import PopupModal from "../../models/PopupModal"; // <-- Import your PopupModal
+import { generateEmailBody } from './emailTemplate';
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
@@ -141,14 +142,8 @@ const ViewProducts = () => {
         { headers: { "x-auth-token": token } }
       );
 
-      const emailBody = `Bid Details:
-Email: ${bid.email}
-Phone: ${bid.phone}
-Price: $${bid.price}
-Quantity: ${bid.quantity}
-
-Your bid has been approved for ${modalProductName}.`;
-
+    // Generate the email body using the helper function
+    const emailBody = generateEmailBody(bid, modalProductName);
       await axios.post(
         "/api/email/send-email",
         {
