@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, Package, Check, AlertCircle } from "lucide-react";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  AlertCircle,
+  ChevronUp,
+  ChevronDown,
+  Search,
+} from "lucide-react";
+import PopupModal from "../../models/PopupModal"; // <-- Import your PopupModal
+import { generateEmailBody } from './emailTemplate';
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
@@ -16,15 +27,30 @@ const ViewProducts = () => {
   const [bidsError, setBidsError] = useState("");
   const [modalProductName, setModalProductName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [productQuantity, setProductQuantity] = useState(0);
+  const [priceSortOrder, setPriceSortOrder] = useState("asc");
+  const [searchQuery, setSearchQuery] = useState("");
 
+  // New state to handle popup notifications (success/error)
+  const [popup, setPopup] = useState({
+    show: false,
+    message: "",
+    type: "success", // "success" or "error"
+  });
+
+  // Fetch products with pagination and search
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("adminToken");
-        const res = await axios.get(`/api/admin/products?page=${page}&limit=${itemsPerPage}`, {
-          headers: { "x-auth-token": token },
-        });
+        const res = await axios.get(
+          `/api/admin/products?page=${page}&limit=${itemsPerPage}&search=${searchQuery}`,
+          {
+            headers: { "x-auth-token": token },
+          }
+        );
+        console.log(res.data);
         setProducts(res.data.products);
         setTotalPages(res.data.totalPages);
         setError("");
@@ -36,20 +62,41 @@ const ViewProducts = () => {
       }
     };
     fetchProducts();
-  }, [page, itemsPerPage]);
+  }, [page, itemsPerPage, searchQuery]);
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setPage(1);
+  };
 
   const fetchBids = async (productId) => {
     try {
       setBidsLoading(true);
       const token = localStorage.getItem("adminToken");
-      const res = await axios.get(`/api/admin/products/${productId}/bids`, {
-        headers: { "x-auth-token": token },
-      });
-      setBids(res.data);
+
+      // Fetch bids for the product
+      const bidsResponse = await axios.get(
+        `/api/admin/products/${productId}/bids`,
+        {
+          headers: { "x-auth-token": token },
+        }
+      );
+
+      // Fetch product details to get the current quantity
+      const productResponse = await axios.get(
+        `/api/admin/products/${productId}`,
+        {
+          headers: { "x-auth-token": token },
+        }
+      );
+
+      setBids(bidsResponse.data);
+      setProductQuantity(productResponse.data.quantity);
       setBidsError("");
       setSelectedProduct(productId);
     } catch (err) {
-      console.error("Error fetching bids", err);
+      console.error("Error fetching bids or product details", err);
       setBidsError("Error fetching bids. Please try again.");
     } finally {
       setBidsLoading(false);
@@ -69,19 +116,97 @@ const ViewProducts = () => {
 
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(parseInt(e.target.value));
-    setPage(1); // Reset to page 1 when items per page changes
+    setPage(1);
   };
+
+  // Modified handleSendEmail function using PopupModal instead of alert
+  const handleSendEmail = async (bid) => {
+    if (!bid.email) {
+      setPopup({
+        show: true,
+        message: "No recipient email found for this bid.",
+        type: "error",
+      });
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("adminToken");
+
+      await axios.post(
+        "/api/admin/approve-bid",
+        {
+          bidId: bid._id,
+          productId: selectedProduct,
+        },
+        { headers: { "x-auth-token": token } }
+      );
+
+    // Generate the email body using the helper function
+    const emailBody = generateEmailBody(bid, modalProductName);
+      await axios.post(
+        "/api/email/send-email",
+        {
+          to: bid.email,
+          subject: `Bid Approved for ${modalProductName}`,
+          text: emailBody,
+        },
+        { headers: { "x-auth-token": token } }
+      );
+
+      setPopup({
+        show: true,
+        message: `Confirmation email has been sent to ${bid.email} for ${modalProductName}.\nPrice: $${bid.price}\nQuantity: ${bid.quantity}`,
+        type: "success",
+      });
+
+      // Refresh the bids list to reflect updated status and quantity
+      await fetchBids(selectedProduct);
+    } catch (error) {
+      console.error("Error sending email", error);
+      setPopup({
+        show: true,
+        message: `Failed to send email: ${
+          error.response ? error.response.data.message : error.message
+        }`,
+        type: "error",
+      });
+    }
+  };
+
+  // Compute verified and sorted bids
+  const verifiedBids = bids.filter((bid) => bid.isVerified);
+  const sortedBids = [...verifiedBids].sort((a, b) =>
+    priceSortOrder === "asc" ? a.price - b.price : b.price - a.price
+  );
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="bg-white rounded-xl  p-6">
+      <div className="bg-white rounded-xl p-6">
+        {/* Header & Search */}
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-1">View Products</h2>
-            <p className="text-gray-500">Manage your product listings and view bids</p>
+            <h2 className="text-2xl font-semibold text-gray-800 mb-1">
+              View Products
+            </h2>
+            <p className="text-gray-500">
+              Manage your product listings and view bids
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-gray-700 font-medium">Products per page:</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="border border-gray-300 rounded-md p-2 pl-10 focus:ring focus:ring-blue-200"
+              />
+              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            </div>
+            <label className="text-gray-700 font-medium">
+              Products per page:
+            </label>
             <select
               value={itemsPerPage}
               onChange={handleItemsPerPageChange}
@@ -96,10 +221,10 @@ const ViewProducts = () => {
           </div>
         </div>
 
-        {/* add here option for taking number of product page per page  */}
+        {/* Loading and error handling */}
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
           </div>
         )}
 
@@ -110,6 +235,7 @@ const ViewProducts = () => {
           </div>
         )}
 
+        {/* Products grid */}
         {!loading && products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product) => (
@@ -121,19 +247,21 @@ const ViewProducts = () => {
               >
                 <div className="relative h-48">
                   <img
-                    src={
-                      product.images[0] ? `data:${product.images[0].contentType};base64,${product.images[0].data}` : ""
-                    }
+                    src={product.images[0] ? product.images[0].url : ""}
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{product.name}</h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    {product.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    {product.description}
+                  </p>
                   <button
                     onClick={() => handleViewBids(product._id, product.name)}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center gap-2"
+                    className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-black transition duration-200 flex items-center justify-center gap-2"
                   >
                     <Package className="w-4 h-4" />
                     View Bids
@@ -183,14 +311,24 @@ const ViewProducts = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+              className="bg-white rounded-xl shadow-xl max-w-5xl w-full max-h-[80vh] flex flex-col"
             >
               <div className="p-6 border-b border-gray-200 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800">Bids for {modalProductName}</h3>
-                  <p className="text-sm text-gray-500 mt-1">View and manage bids for this product</p>
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    Bids for {modalProductName}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    View and manage bids for this product
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Quantity Remaining For {modalProductName} is {productQuantity}
+                  </p>
                 </div>
-                <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg transition duration-200">
+                <button
+                  onClick={closeModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition duration-200"
+                >
                   <X className="w-5 h-5 text-gray-500" />
                 </button>
               </div>
@@ -198,7 +336,7 @@ const ViewProducts = () => {
               <div className="flex-1 overflow-y-auto min-h-0 p-6">
                 {bidsLoading && (
                   <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
                   </div>
                 )}
 
@@ -209,48 +347,123 @@ const ViewProducts = () => {
                   </div>
                 )}
 
-                {!bidsLoading && bids.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="sticky top-0 bg-white shadow-sm">
-                        <tr className="bg-gray-50">
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Email</th>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Phone</th>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Price</th>
-                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {bids.map((bid) => (
-                          <tr key={bid._id} className="hover:bg-gray-50 transition duration-200">
-                            <td className="px-6 py-4 text-sm text-gray-800">{bid.email}</td>
-                            <td className="px-6 py-4 text-sm text-gray-800">{bid.phone}</td>
-                            <td className="px-6 py-4 text-sm text-gray-800">${bid.price}</td>
-                            <td className="px-6 py-4">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                                  bid.isVerified ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"
-                                }`}
+                <div className="container mx-auto px-4">
+                  {!bidsLoading && verifiedBids.length > 0 ? (
+                    <div className="w-full">
+                      <table className="min-w-full w-full table-auto">
+                        <thead className="sticky top-0 bg-white shadow-sm">
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              <button
+                                onClick={() =>
+                                  setPriceSortOrder((prev) =>
+                                    prev === "asc" ? "desc" : "asc"
+                                  )
+                                }
+                                className="flex items-center space-x-2 focus:outline-none hover:bg-gray-200 px-2 py-1 rounded"
                               >
-                                {bid.isVerified ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                                {bid.isVerified ? "Verified" : "Pending"}
-                              </span>
-                            </td>
+                                <span>Price</span>
+                                {priceSortOrder === "asc" ? (
+                                  <ChevronUp className="inline-block w-4 h-4" />
+                                ) : (
+                                  <ChevronDown className="inline-block w-4 h-4" />
+                                )}
+                              </button>
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Email
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Phone
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Quantity
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Date
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Company
+                            </th>
+                            <th className="px-6 py-3 text-left text-sm font-medium text-gray-600">
+                              Action
+                            </th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {!bidsLoading && bids.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">No bids found for this product</div>
-                )}
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {sortedBids.map((bid) => {
+                            const isProductOutOfStock = productQuantity <= 0;
+                            const isBidApproved = bid.status === "Approved";
+                            return (
+                              <tr
+                                key={bid._id}
+                                className="hover:bg-gray-50 transition duration-200"
+                              >
+                                <td className="px-6 py-4 text-sm text-gray-800">
+                                  ${bid.price}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-800">
+                                  {bid.email}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-800">
+                                  {bid.phone}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-800">
+                                  {bid.quantity}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-800">
+                                  {new Date(bid.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-800">
+                                  {bid.company}
+                                </td>
+                                <td className="px-6 py-4">
+                                  {isBidApproved ? (
+                                    <span className="text-green-600">
+                                      Approved
+                                    </span>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleSendEmail(bid)}
+                                      disabled={isProductOutOfStock}
+                                      className={`bg-gray-900 hover:bg-black text-white text-sm px-4 py-2 rounded transition duration-200 ${
+                                        isProductOutOfStock
+                                          ? "opacity-50 cursor-not-allowed"
+                                          : ""
+                                      }`}
+                                    >
+                                      Send Email
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    !bidsLoading && (
+                      <div className="text-center py-12 text-gray-500">
+                        No verified bids found for this product
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Render the PopupModal when popup.show is true */}
+      {popup.show && (
+        <PopupModal
+          message={popup.message}
+          type={popup.type}
+          onClose={() => setPopup({ ...popup, show: false })}
+        />
+      )}
     </div>
   );
 };

@@ -1,29 +1,26 @@
-
+// routes/adminRoutes.js
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const auth = require('../middlewares/auth');
-const multer = require('multer');
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+// Import the Cloudinary upload middleware from services/cloudinaryService.js
+const upload = require('../services/cloudinaryService');
 
-// Admin login and other routes...
+// Admin authentication routes
 router.post('/login', adminController.loginAdmin);
 router.post('/register', adminController.registerAdmin);
 
-// Register a product with multiple image uploads (protected route)
+// Product routes (protected by auth)
+// Use Cloudinary middleware to handle image uploads (up to 10 images)
 router.post('/product', auth, upload.array('images', 10), adminController.registerProduct);
+router.put('/product/:id', auth, upload.array('images', 10), adminController.updateProduct);
+router.delete('/product/:id', auth, adminController.deleteProduct);
 
-// View all bids route with pagination
-// router.get('/bids', auth, adminController.getAllBids);
-
-
-// View all products route with pagination
+// Bid and product retrieval routes
+router.post('/approve-bid', auth, adminController.approveBid);
 router.get('/products', auth, adminController.getProducts);
-
-// Fetch bids for a specific product
 router.get('/products/:id/bids', auth, adminController.getProductBids);
-
+router.get('/products/:id', auth, adminController.getProductById);
 
 module.exports = router;

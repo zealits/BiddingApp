@@ -6,9 +6,11 @@ const BidSchema = new mongoose.Schema({
   email: { type: String, required: true },
   phone: { type: String, required: true },
   price: { type: Number, required: true },
+  quantity: { type: Number, default: 1 },
+  company: { type: String, required: true },
   isVerified: { type: Boolean, default: false },
   otp: { type: String }, // For bid verification (if needed)
-  status: { type: String, enum: ['Pending', 'Accepted', 'Rejected'], default: 'Pending' },
+  status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
   createdAt: { type: Date, default: Date.now },
 });
 

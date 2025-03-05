@@ -1,7 +1,34 @@
 // backend/controllers/emailController.js
 const EmailVerification = require('../models/EmailVerification');
 const generateOTP = require('../utils/otpGenerator');
-const sendEmail = require('../utils/email');
+const generateOtpEmailTemplate = require('../utils/otpEmailTemplate');
+
+//const sendEmail = require('../utils/email');
+
+const sendEmail = require("../utils/sendEmail"); // Assuming sendEmail function is in utils
+const sendmail = require("../utils/Sendmail"); // Assuming sendEmail function is in utils
+// Controller function to send an email
+exports.sendEmailController = async (req, res) => {
+  console.log(req.body);
+  try {
+    const { to, subject, text } = req.body;
+    if (!to || !subject || !text) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    // Append a bid approved message to the text.
+    const emailBody = `${text}\n`;
+
+    // Call sendEmail with an options object.
+    await sendmail({ to, subject, text: emailBody });
+    res.status(200).json({ message: "Email sent successfully." });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to send email.", error: error.message });
+  }
+};
+
+
+
 
 exports.sendOTP = async (req, res) => {
   const { email } = req.body;
@@ -20,7 +47,8 @@ exports.sendOTP = async (req, res) => {
     
     // Send the OTP to the provided email
     const subject = 'Your Email Verification OTP';
-    const text = `Your OTP for email verification is: ${otp}`;
+    const text = generateOtpEmailTemplate(otp);
+    console.log(text);
     await sendEmail(email, subject, text);
     
     res.json({ msg: 'OTP sent to email' });

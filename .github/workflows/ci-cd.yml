@@ -56,19 +56,19 @@ jobs:
               cp ~/BiddingApp/config/config.env ~/config.env.bak
             fi
 
-            # Remove the ~/BiddingApp folder if it exists
-            rm -rf ~/BiddingApp || true
+            # Use git pull if the repository exists; otherwise, clone it
+            if [ -d ~/BiddingApp ]; then
+              cd ~/BiddingApp
+              git pull origin main
+            else
+              git clone https://github.com/zealits/BiddingApp.git ~/BiddingApp
+              cd ~/BiddingApp
+            fi
 
-            # Clone the repository
-            git clone https://github.com/zealits/BiddingApp.git
-
-            # Restore the config.env file
+            # Restore the config.env file if a backup exists
             if [ -f ~/config.env.bak ]; then
               mv ~/config.env.bak ~/BiddingApp/config/config.env
             fi
-
-            # Navigate to the directory
-            cd ~/BiddingApp
 
             # Install backend dependencies
             npm install
