@@ -48,7 +48,7 @@ function App() {
         <Route path="/user/bidstatus" element={<CheckBidStatus />} />
         <Route path="/contact" element={<Contact />} />
 
-        {/* Fallback route */}
+        {/* Fallback route dfd */}
         <Route path="*" element={<Navigate to="/user" replace />} />
       </Routes>
     </>
